@@ -1,0 +1,61 @@
+name: User Story
+description: Créer une fonctionnalité utilisateur avec scénario Gherkin
+title: "[USxx] - NOM DE LA FONCTIONNALITÉ"
+labels: ["user-story"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🧩 Aperçu
+
+        **Catégorie fonctionnelle :**
+        - [ ] Gestion des Joueurs  
+        - [ ] Gestion des Tournois  
+        - [ ] Gestion des Tours  
+        - [ ] Rapports et Classement  
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: 🧾 User Story (format Gherkin)
+      description: Décris ta user story selon le format Gherkin
+      placeholder: |
+        Feature: [But de la fonctionnalité]
+          En tant que [acteur]
+          Je veux [action ou fonctionnalité]
+          Afin de [bénéfice ou objectif]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ Cas d'acceptation (Given / When / Then)
+      description: Liste les cas d’acceptation au format Gherkin
+      placeholder: |
+        Scénario: ...
+          Étant donné ...
+          Quand ...
+          Alors ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priorité
+      options:
+        - Must
+        - Should
+        - Could
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Taille estimée (T-Shirt sizing)
+      options:
+        - XS
+        - S
+        - M
+        - L
+        - XL
