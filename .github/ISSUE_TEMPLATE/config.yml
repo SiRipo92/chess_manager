@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+contact_links: []
+
+issue_templates:
+  - name: User Story
+    description: Template pour une fonctionnalité utilisateur au format Gherkin
+    title: "[USxx] - "
+    labels: [user-story]
+    assignees: []
+    body: user-story.md
