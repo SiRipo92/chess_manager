@@ -1,0 +1,14 @@
+flake8==7.3.0
+flake8-html==0.4.3
+Jinja2==3.1.6
+markdown-it-py==3.0.0
+MarkupSafe==3.0.2
+mccabe==0.7.0
+mdurl==0.1.2
+prompt_toolkit==3.0.51
+pycodestyle==2.14.0
+pyflakes==3.4.0
+Pygments==2.19.2
+questionary==2.1.0
+rich==14.0.0
+wcwidth==0.2.13

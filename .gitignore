@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+.idea/
+env/
+flake8_rapport/
+data/*.json
