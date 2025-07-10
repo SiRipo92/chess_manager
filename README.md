@@ -16,24 +16,25 @@ chess_manager/
 ├── requirements.txt   # List of Python dependencies
 ├── .gitignore
 ├── flake8_rapport/    # Linting report folder
+```
 
 ## 📦 Setup Instructions
 
 1. Clone this repository
 2. Set up the virtual environment and install dependencies:
 
-    ```text
+    ```bash
     python3 -m venv .venv
     source .venv/bin/activate
     pip install -r requirements.txt
     ```
 3. Run the program
-    ```text
+    ```bash
     python3 main.py
     ```
 
 ## Features 
-+ Player registration with national chess ID</li>
++ Player registration with national chess ID
 
 + Tournament creation (rounds, pairings, scoring)
 
@@ -48,7 +49,7 @@ chess_manager/
 ### 🧪 Linting & Code Style
 - Run flake8 manually:
 
-    ```text
+    ```bash
     flake8 --max-line-length=119 --format=html --htmldir=flake8_rapport
     ```
 
