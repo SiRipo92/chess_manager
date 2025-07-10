@@ -2,17 +2,23 @@ name: User Story
 description: Créer une fonctionnalité utilisateur avec scénario Gherkin
 title: "[USxx] - NOM DE LA FONCTIONNALITÉ"
 labels: ["user-story"]
+
 body:
   - type: markdown
     attributes:
       value: |
         ## 🧩 Aperçu
 
-        **Catégorie fonctionnelle :**
-        - [ ] Gestion des Joueurs  
-        - [ ] Gestion des Tournois  
-        - [ ] Gestion des Tours  
-        - [ ] Rapports et Classement  
+  - type: checkboxes
+    id: functional-category
+    attributes:
+      label: 🧩 Catégorie fonctionnelle
+      description: Sélectionne une ou plusieurs catégories auxquelles cette fonctionnalité appartient
+      options:
+        - label: Gestion des Joueurs
+        - label: Gestion des Tournois
+        - label: Gestion des Tours
+        - label: Rapports et Classement
 
   - type: textarea
     id: user-story
