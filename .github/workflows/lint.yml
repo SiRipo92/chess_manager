@@ -25,7 +25,7 @@ jobs:
 
       - name: Run flake8
         run: |
-          flake8 . --max-line-length=119 --format=html --htmldir=flake8_rapport
+          flake8 . --max-line-length=119 --format=html --htmldir=flake8_report
 
       - name: Upload flake8 report as artifact
         uses: actions/upload-artifact@v4
