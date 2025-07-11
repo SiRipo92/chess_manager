@@ -37,7 +37,6 @@ class Tournament:
         self.actual_round_number = 0
         self.players = List[Player] = []
         self.rounds = List[Round] = []
-        self.player_scores: Dict[str, float] = {}
 
     def add_player(self, player: Player) -> None:
         """

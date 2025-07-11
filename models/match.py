@@ -1,4 +1,5 @@
 from typing import Tuple
+from models.player import Player
 
 class Match:
     """
@@ -11,9 +12,9 @@ class Match:
         score2 (float) : Score du joueur 2 (1.0, 0.5 ou 0.0).
     """
 
-    def __init__(self, player1_id: str, player2_id: str) -> None:
-        self.player1_id = player1_id
-        self.player2_id = player2_id
+    def __init__(self, player1: Player, player2: Player) -> None:
+        self.player1 = player1
+        self.player2 = player2
 
         # Scores par defaut (match non-joué)
         self.score1 = 0.0
