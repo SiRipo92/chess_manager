@@ -18,7 +18,7 @@ body:
         - label: Gestion des Joueurs
         - label: Gestion des Tournois
         - label: Gestion des Tours
-        - label: Rapports et Classement
+        - label: Systèmes Automatiques
 
   - type: textarea
     id: user-story
@@ -51,9 +51,9 @@ body:
     attributes:
       label: Priorité
       options:
-        - Must
-        - Should
-        - Could
+        - Obligatoire
+        - Devrait avoir
+        - Pourrait avoir
 
   - type: dropdown
     id: size
