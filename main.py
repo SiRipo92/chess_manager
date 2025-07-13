@@ -10,8 +10,10 @@ from chess_manager.views.player_views import (
     prompt_new_player,
     confirm_player_added,
     display_error_message,
-    display_all_players
+    display_all_players,
+    prompt_id_filter
 )
+from chess_manager.views.main_views import display_main_menu, display_filter_sort_menu
 
 
 def main() -> None:
@@ -20,30 +22,37 @@ def main() -> None:
     controller = PlayerController(filepath="data/players.json")
 
     while True:
-        print("\nMenu principal :")
-        print("1. Ajouter un joueur (US01)")
-        print("2. Voir la liste des joueurs (US02)")
-        print("3. Quitter")
-        choice = input("Choix : ")
+        choice = display_main_menu()
 
         if choice == "1":
             last_name, first_name, birthdate, national_id = prompt_new_player()
             success = controller.add_player(last_name, first_name, birthdate, national_id)
-            if success:
-                confirm_player_added()
-            else:
-                display_error_message("Format de l’identifiant invalide ou ID déjà existant.")
+            confirm_player_added() if success else display_error_message(
+                "Format de l’identifiant invalide ou ID déjà existant.")
 
         elif choice == "2":
             players = controller.load_all_players()
             display_all_players(players)
 
         elif choice == "3":
+            players = controller.load_all_players()
+            sub_choice = display_filter_sort_menu()
+            if sub_choice == "1":
+                sorted_players = controller.sort_players_by_name(players)
+                display_all_players(sorted_players)
+            elif sub_choice == "2":
+                partial_id = prompt_id_filter()
+                filtered_players = controller.filter_players_by_id(players, partial_id)
+                display_all_players(filtered_players)
+            else:
+                display_error_message("Option invalide.")
+
+        elif choice == "4":
             print("👋 Au revoir !")
             break
 
         else:
-            display_error_message("Choix invalide. Veuillez sélectionner 1, 2 ou 3.")
+            display_error_message("Option invalide.")
 
 
 if __name__ == "__main__":

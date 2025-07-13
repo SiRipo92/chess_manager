@@ -47,7 +47,7 @@ def display_all_players(players: List[Player]):
 
     print("\n📋 Liste des joueurs enregistrés :\n")
     for idx, player in enumerate(players, 1):
-        print(f"{idx}. {player.first_name} {player.last_name} (ID: {player.national_id})")
+        print(f"{idx}. {player.last_name.upper()}, {player.first_name} (ID: {player.national_id})")
         print(f"   Né(e) le : {player.birthdate} — Âge : {player.age}")
         print(f"   Date d'inscription : {player.date_enrolled}\n")
 
@@ -59,7 +59,11 @@ def prompt_sort_or_filter():
     Retour :
         str : Choix de l’action ("Trier A-Z", "Filtrer par ID", etc.).
     """
-    pass
+    print("\n🔎 Options de tri / filtrage :")
+    print("1. Trier les joueurs par nom (A-Z)")
+    print("2. Filtrer par identifiant")
+    print("3. Filtrer par nom de famille")
+    return input("Votre choix : ")
 
 
 def prompt_id_filter():
@@ -69,17 +73,17 @@ def prompt_id_filter():
     Retour :
         str : Partie d’ID à rechercher.
     """
-    pass
+    return input("Entrez une chaîne pour filtrer les identifiants : ")
 
 
-def prompt_player_id_for_stats():
+def prompt_player_id_for_stats() -> str:
     """
     Demande l’identifiant d’un joueur pour consulter ses statistiques.
 
     Retour :
         str : ID du joueur à consulter.
     """
-    pass
+    return input("Entrez l’identifiant du joueur pour consulter ses statistiques : ")
 
 
 def display_player_stats(stats: str):
@@ -89,4 +93,4 @@ def display_player_stats(stats: str):
     Paramètre :
         stats (str) : Chaîne descriptive des performances.
     """
-    pass
+    print(f"\n📊 Statistiques du joueur :\n{stats}")
