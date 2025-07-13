@@ -41,7 +41,15 @@ def display_all_players(players: List[Player]):
     Paramètre :
         players (List[Player]) : Liste des joueurs à afficher.
     """
-    pass
+    if not players:
+        print("Aucun joueur enregistré.")
+        return
+
+    print("\n📋 Liste des joueurs enregistrés :\n")
+    for idx, player in enumerate(players, 1):
+        print(f"{idx}. {player.first_name} {player.last_name} (ID: {player.national_id})")
+        print(f"   Né(e) le : {player.birthdate} — Âge : {player.age}")
+        print(f"   Date d'inscription : {player.date_enrolled}\n")
 
 
 def prompt_sort_or_filter():

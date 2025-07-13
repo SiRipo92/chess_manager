@@ -66,10 +66,10 @@ class PlayerController:
         if not os.path.exists(self.filepath):
             return []
 
-        with open(self.filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            # On suppose que Player.from_dict() est bien défini dans models/player.py
-            return [Player.from_dict(p) for p in data]
+        try:
+            return Player.load_all_players(self.filepath)
+        except FileNotFoundError:
+            return []
 
     def save_all_players(self, players: List[Player]) -> None:
         """
