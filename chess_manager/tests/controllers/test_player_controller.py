@@ -2,6 +2,7 @@ import unittest
 import os
 from chess_manager.controllers.player_controller import PlayerController
 
+
 class TestPlayerController(unittest.TestCase):
 
     def setUp(self):

@@ -83,7 +83,6 @@ class PlayerController:
             data = [p.to_dict() for p in players]
             json.dump(data, f, indent=2, ensure_ascii=False)
 
-
     def sort_players_by_name(self, players: List[Player]) -> List[Player]:
         """
         Trie les joueurs par ordre alphabétique (nom, prénom).
@@ -93,7 +92,6 @@ class PlayerController:
         """
         return sorted(players, key=lambda p: (p.last_name.lower(), p.first_name.lower()))
 
-
     def filter_players_by_id(self, players: List[Player], query: str) -> List[Player]:
         """
         Filtre les joueurs dont l’identifiant contient une chaîne donnée.
@@ -102,7 +100,6 @@ class PlayerController:
             List[Player] : Liste filtrée.
         """
         return [p for p in players if query.lower() in p.national_id.lower()]
-
 
     def filter_players_by_name(self, players: List[Player], query: str) -> List[Player]:
         """
