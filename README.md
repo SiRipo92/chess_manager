@@ -50,12 +50,33 @@ chess_manager/         # Project namespace
 
 + Clean architecture with full MVC separation
 
+
 ### 🧪 Linting & Code Style
 - Run flake8 manually:
 
     ```bash
     flake8 --max-line-length=119 --format=html --htmldir=flake8_rapport
     ```
+### Running Tests and Coverage
+This project uses nose2 for unit testing and coverage for code coverage analysis.
+
+1. Install test dependencies
+```bash
+pip install -r requirements.txt
+pip install nose2 coverage
+```
+2. Run all unit tests
+```bash
+nose2 -v
+```
+3. View coverage report in terminal
+```bash
+coverage report -m
+```
+4. Custom .coverage file location
+```bash
+coverage report -m
+```
 
 ## 📋 License
 MIT License or School Submission — to be specified.
