@@ -4,18 +4,22 @@ This project is an offline, console-based chess tournament manager built with Py
 
 ## 📁 Project Structure
 
-```text
-chess_manager/
-├── models/            # Contains Player, Match, Round, Tournament models
-├── controllers/       # Application logic (starting tournaments, progressing rounds)
-├── views/             # Text-based CLI interface using questionary and rich
+```bash
+chess_manager/         # Project namespace
+├── chess_maanager/    # Microservice package for the chess management tool 
+    ├── models/            # Contains Player, Match, Round, Tournament models
+    ├── controllers/       # Application logic (starting tournaments, progressing rounds)
+    ├── views/             # Text-based CLI interface using questionary and rich
+    ├── tests/             # Unit tests with nose2 and coverage
+    ├── main.py            # Application entry point
 ├── repositories/      # Responsible for loading/saving data (JSON)
 ├── data/              # Contains .json files for persistence
-├── tests/             # Unit tests
 ├── main.py            # Application entry point
 ├── requirements.txt   # List of Python dependencies
 ├── .gitignore
 ├── flake8_rapport/    # Linting report folder
+├── setup.cfg          # Setup configuration for nose, coverage and flake8 linting
+├── .github/           # Automated workflows for linting and testing
 ```
 
 ## 📦 Setup Instructions
