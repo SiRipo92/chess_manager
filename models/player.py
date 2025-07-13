@@ -1,6 +1,7 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 import json
+
 
 class Player:
     """

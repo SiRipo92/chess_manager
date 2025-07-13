@@ -2,6 +2,7 @@ from typing import List, Dict
 from models.player import Player
 from models.round import Round
 
+
 class Tournament:
     """
     Représente un tournoi d'échecs.

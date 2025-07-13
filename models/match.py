@@ -1,6 +1,7 @@
 from typing import Tuple, Dict
 from models.player import Player
 
+
 class Match:
     """
     Représente un match entre deux joueurs d’un tournoi.

@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Dict
 from models.match import Match
 
+
 class Round:
     """
     Représente un tour d’un tournoi d’échecs.
@@ -12,7 +13,7 @@ class Round:
         matches (List[Match]) : Liste des matchs de ce tour.
     """
 
-    def __init__(self, round_number:int) -> None:
+    def __init__(self, round_number: int) -> None:
         self.round_number = round_number
         self.start_time = datetime.now().isoformat()
         self.end_time = ""

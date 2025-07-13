@@ -4,6 +4,7 @@ import os
 import re
 from typing import List
 
+
 class PlayerController:
     """
     Contrôleur responsable de la gestion des joueurs :

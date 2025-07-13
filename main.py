@@ -8,6 +8,7 @@ import os
 from controllers.player_controller import PlayerController
 from views.player_views import prompt_new_player, confirm_player_added, display_error_message
 
+
 def main() -> None:
     print("♟️ Bienvenue dans le Chess Tournament Manager (v0.1)")
     print("---- Menu US01 : Ajout d’un joueur ----")
@@ -29,6 +30,7 @@ def main() -> None:
         confirm_player_added()
     else:
         display_error_message("Format de l’identifiant invalide ou ID déjà existant.")
+
 
 if __name__ == "__main__":
     main()

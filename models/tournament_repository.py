@@ -1,6 +1,7 @@
 from typing import List
 from models.tournament import Tournament
 
+
 class TournamentRepository:
     """
     Gère la persistance des tournois : chargement, sauvegarde et recherche.
