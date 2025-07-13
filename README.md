@@ -11,7 +11,6 @@ chess_manager/         # Project namespace
     ├── controllers/       # Application logic (starting tournaments, progressing rounds)
     ├── views/             # Text-based CLI interface using questionary and rich
     ├── tests/             # Unit tests with nose2 and coverage
-    ├── main.py            # Application entry point
 ├── repositories/      # Responsible for loading/saving data (JSON)
 ├── data/              # Contains .json files for persistence
 ├── main.py            # Application entry point
