@@ -1,9 +1,9 @@
 import unittest
 import os
-import json
 import tempfile
 from datetime import datetime
 from chess_manager.models.player import Player
+
 
 class TestPlayer(unittest.TestCase):
     """Unit tests for the Player model."""
@@ -83,6 +83,7 @@ class TestPlayer(unittest.TestCase):
         fake_path = "nonexistent_players.json"
         with self.assertRaises(FileNotFoundError):
             Player.load_all_players(fake_path)
+
 
 if __name__ == "__main__":
     unittest.main()
