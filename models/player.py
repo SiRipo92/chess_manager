@@ -89,7 +89,7 @@ class Player:
             data = json.load(file)  # Liste de dictionnaires
             return [Player._from_dict(p) for p in data]  # Transforme chaque dict en instance Player
 
-    def _to_dict(self) -> dict:
+    def to_dict(self) -> dict:
         """
         Convertit l'objet Player en dictionnaire pour l’enregistrement JSON.
         """
@@ -102,7 +102,7 @@ class Player:
         }
 
     @staticmethod
-    def _from_dict(data: dict) -> "Player":
+    def from_dict(data: dict) -> "Player":
         """
         Reconstruit un objet Player à partir d’un dictionnaire.
         """

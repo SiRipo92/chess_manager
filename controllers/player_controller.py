@@ -1,12 +1,13 @@
 from models.player import Player
 import json
 import os
+import re
 from typing import List
 
 class PlayerController:
     """
     Contrôleur responsable de la gestion des joueurs :
-        ajout, chargement, tri, filtrage.
+    ajout, chargement, tri, filtrage.
     """
 
     def __init__(self, filepath: str):
@@ -18,18 +19,41 @@ class PlayerController:
         """
         self.filepath = filepath
 
-    def add_player(self, last_name: str, first_name: str, birthdate: str, national_id: str ) -> None:
+    def add_player(self, last_name: str, first_name: str, birthdate: str, national_id: str) -> bool:
         """
-        Crée un nouveau joueur et l’ajoute à la base de données.
+        Crée un nouveau joueur et l’ajoute à la base de données (JSON),
+        si l'ID n'est pas déjà utilisé et que le format est correct.
 
-        Paramètres :
-            last_name (str) : Nom de famille du joueur.
-            first_name (str) : Prénom du joueur.
-            birth_date (str) : Date de naissance (YYYY-MM-DD).
-            national_id (str) : Identifiant national d’échecs.
+        Retour :
+            bool : True si ajouté avec succès, False sinon.
         """
-        # (à implémenter plus tard) : Créer, charger, ajouter, sauvegarder
-        pass
+        if not self._is_valid_id(national_id):
+            # ID invalide : ne respecte pas le format
+            return False
+
+        players = self.load_all_players()
+
+        # Vérifie si l'ID existe déjà
+        for player in players:
+            if player.national_id == national_id:
+                return False
+
+        # Créer un nouvel objet Player
+        new_player = Player(last_name, first_name, birthdate, national_id)
+        players.append(new_player)
+        self.save_all_players(players)
+        return True
+
+    @staticmethod
+    def _is_valid_id(national_id: str) -> bool:
+        """
+        Vérifie si l'identifiant respecte le format attendu (2 lettres + 5 chiffres).
+        Exemple valide : AB12345
+
+        Retour :
+            bool : True si l'ID est valide, sinon False.
+        """
+        return bool(re.match(r"^[A-Z]{2}[0-9]{5}$", national_id))
 
     def load_all_players(self) -> List[Player]:
         """
@@ -38,7 +62,13 @@ class PlayerController:
         Retour :
             List[Player] : Liste des joueurs existants.
         """
-        pass
+        if not os.path.exists(self.filepath):
+            return []
+
+        with open(self.filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            # On suppose que Player.from_dict() est bien défini dans models/player.py
+            return [Player.from_dict(p) for p in data]
 
     def save_all_players(self, players: List[Player]) -> None:
         """
@@ -47,14 +77,14 @@ class PlayerController:
         Paramètre :
             players (List[Player]) : Liste des joueurs à sauvegarder.
         """
-        pass
+        with open(self.filepath, "w", encoding="utf-8") as f:
+            # On suppose que Player.to_dict() est bien défini dans models/player.py
+            data = [p.to_dict() for p in players]
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
     def sort_players_by_name(self, players: List[Player]) -> List[Player]:
         """
         Trie les joueurs par ordre alphabétique (nom, prénom).
-
-        Paramètre :
-            players (List[Player]) : Liste à trier.
 
         Retour :
             List[Player] : Liste triée.
@@ -64,10 +94,6 @@ class PlayerController:
     def filter_players_by_id(self, players: List[Player], query: str) -> List[Player]:
         """
         Filtre les joueurs dont l’identifiant contient une chaîne donnée.
-
-        Paramètres :
-            players (List[Player]) : Liste de départ.
-            query (str) : Sous-chaîne à rechercher dans les ID.
 
         Retour :
             List[Player] : Liste filtrée.
