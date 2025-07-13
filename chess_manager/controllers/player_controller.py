@@ -66,10 +66,10 @@ class PlayerController:
         if not os.path.exists(self.filepath):
             return []
 
-        with open(self.filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            # On suppose que Player.from_dict() est bien défini dans models/player.py
-            return [Player.from_dict(p) for p in data]
+        try:
+            return Player.load_all_players(self.filepath)
+        except FileNotFoundError:
+            return []
 
     def save_all_players(self, players: List[Player]) -> None:
         """
@@ -90,7 +90,7 @@ class PlayerController:
         Retour :
             List[Player] : Liste triée.
         """
-        pass
+        return sorted(players, key=lambda p: (p.last_name.lower(), p.first_name.lower()))
 
     def filter_players_by_id(self, players: List[Player], query: str) -> List[Player]:
         """
@@ -99,4 +99,10 @@ class PlayerController:
         Retour :
             List[Player] : Liste filtrée.
         """
-        pass
+        return [p for p in players if query.lower() in p.national_id.lower()]
+
+    def filter_players_by_name(self, players: List[Player], query: str) -> List[Player]:
+        """
+        Filtre les joueurs dont le nom de famille contient une chaine donnée
+        """
+        return [p for p in players if query.lower() in p.last_name.lower()]
