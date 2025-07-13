@@ -3,33 +3,67 @@ from models.tournament import Tournament
 
 class TournamentRepository:
     """
-    Repository class responsible for managing Tournament data.
+    Gère la persistance des tournois : chargement, sauvegarde et recherche.
 
-    Attributes:
-        dir_path (str): Directory where tournament JSON files are stored.
-        tournaments (List[Tournament]): List of loaded tournaments.
+    Attributs :
+        dir_path (str) : Chemin du répertoire où les fichiers JSON sont stockés.
+        tournaments (List[Tournament]) : Liste des tournois chargés en mémoire.
     """
 
-    def __init__(self, dir_path: str) -> None:
-        self.dir_path: str = dir_path
-        self.tournaments: List[Tournament] = []
+    def __init__(self, dir_path: str = "data/tournaments") -> None:
+        """
+        Initialise le référentiel des tournois et charge les tournois existants.
 
-    def save_tournament(self, tournament: Tournament) -> None:
-        """Save a Tournament instance to a JSON file."""
+        Paramètre :
+            dir_path (str) : Répertoire de sauvegarde des fichiers JSON.
+        """
         pass
 
-    def load_all_tournaments(self) -> None:
-        """Load all tournaments from the specified directory."""
+    def load_all_tournaments(self) -> List[Tournament]:
+        """
+        Charge tous les tournois depuis les fichiers JSON du répertoire.
+
+        Retour :
+            List[Tournament] : Liste des tournois chargés.
+        """
+        pass
+
+    def save_tournament(self, tournament: Tournament) -> None:
+        """
+        Sauvegarde un tournoi dans un fichier JSON.
+
+        Paramètre :
+            tournament (Tournament) : Le tournoi à sauvegarder.
+        """
+        pass
+
+    def add_tournament(self, tournament: Tournament) -> None:
+        """
+        Ajoute un tournoi à la mémoire et le sauvegarde sur disque.
+
+        Paramètre :
+            tournament (Tournament) : Le nouveau tournoi à ajouter.
+        """
         pass
 
     def get_tournament_by_name(self, name: str) -> Tournament:
-        """Retrieve a tournament by its name."""
+        """
+        Recherche un tournoi par son nom.
+
+        Paramètre :
+            name (str) : Le nom du tournoi.
+        Retour :
+            Tournament : Le tournoi correspondant.
+        """
         pass
 
     def get_tournament_by_location(self, location: str) -> List[Tournament]:
-        """Retrieve tournaments held in a specific location."""
-        pass
+        """
+        Recherche tous les tournois correspondant à un lieu donné.
 
-    def get_all_tournaments(self) -> List[Tournament]:
-        """Return all tournaments loaded in memory."""
+        Paramètre :
+            location (str) : Lieu du tournoi.
+        Retour :
+            List[Tournament] : Liste des tournois à cet endroit.
+        """
         pass

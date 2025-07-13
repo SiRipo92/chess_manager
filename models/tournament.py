@@ -7,40 +7,44 @@ class Tournament:
     Représente un tournoi d'échecs.
 
     Attributs :
-        name (str) : Nom du tournoi.
         location (str) : Lieu du tournoi.
-        start_date (str) : Date de début.
-        end_date (str) : Date de fin.
-        number_rounds (int) : Nombre de tours (défaut : 4).
-        actual_round_number (int) : Numéro du tour en cours.
+        start_date (str) : Date de début (format YYYY-MM-DD).
+        end_date (str) : Date de fin (format YYYY-MM-DD).
+        number_rounds (int) : Nombre total de tours (défaut : 4).
+        current_round_number (int) : Numéro du tour actuel.
+        description (str) : Commentaires du directeur.
         players (List[Player]) : Liste des joueurs inscrits.
-        rounds (List[Round]) : Liste des tours joués.
-        player_scores (Dict[str, float]) : Scores individuels des joueurs dans ce tournoi.
-        description (str) : Remarques du directeur du tournoi.
+        rounds (List[Round]) : Liste des tours du tournoi.
     """
 
     def __init__(
-            self,
-            name: str,
-            location: str,
-            start_date: str,
-            end_date: str,
-            description: str,
-            number_rounds: int = 4
+        self,
+        location: str,
+        start_date: str,
+        end_date: str,
+        description: str,
+        number_rounds: int = 4
     ) -> None:
-        self.name = name
         self.location = location
         self.start_date = start_date
         self.end_date = end_date
         self.description = description
         self.number_rounds = number_rounds
-        self.actual_round_number = 0
-        self.players = List[Player] = []
-        self.rounds = List[Round] = []
+        self.current_round_number = 0
+        self.players: List[Player] = []
+        self.rounds: List[Round] = []
 
-    def add_player(self, player: Player) -> None:
+    @property
+    def name(self) -> str:
         """
-        Ajoute un joueur à la liste des participants et initialise son score à 0.
+        Génère automatiquement le nom du tournoi à partir du lieu et de la date.
+        Exemple : "Paris_2025-07-01"
+        """
+        return f"{self.location}_{self.start_date}"
+
+    def add_player_to_tournament(self, player: Player) -> None:
+        """
+        Ajoute un joueur à la liste des participants.
 
         Paramètre :
             player (Player) : L'objet joueur à inscrire.
@@ -49,37 +53,57 @@ class Tournament:
 
     def start_first_round(self) -> Round:
         """
-        Crée et retourne le premier tour du tournoi avec des paires aléatoires.
+        Démarre le premier tour avec des paires aléatoires.
 
         Retour :
-            Round : Instance du premier tour.
+            Round : Le premier tour créé.
         """
         pass
 
     def start_next_round(self) -> Round:
         """
-        Crée et retourne un tour basé sur les scores du tournoi.
+        Démarre un nouveau tour en fonction du classement actuel.
 
         Retour :
-            Round : Instance du tour suivant.
+            Round : Le nouveau tour créé.
         """
         pass
 
     def update_scores_from_matches(self, tournament_round: Round) -> None:
         """
-        Met à jour les scores des joueurs selon les résultats du tour donné.
+        Met à jour les scores des joueurs en fonction des résultats du tour.
 
         Paramètre :
-            round (Round) : Le tour dont on veut extraire les résultats.
+            tournament_round (Round) : Le tour concerné.
         """
         pass
 
     def determine_winner(self) -> Player:
         """
-        Détermine le joueur avec le plus grand score dans le tournoi.
+        Retourne le joueur avec le score le plus élevé.
 
         Retour :
-            Player : Le joueur gagnant.
+            Player : Le gagnant du tournoi.
         """
         pass
 
+    def save_tournament_to_dict(self) -> Dict:
+        """
+        Sérialise le tournoi sous forme de dictionnaire pour l’enregistrement JSON.
+
+        Retour :
+            dict : Représentation sérialisée du tournoi.
+        """
+        pass
+
+    @staticmethod
+    def load_all_tournaments(filepath: str) -> List["Tournament"]:
+        """
+        Charge tous les tournois sauvegardés depuis un fichier JSON.
+
+        Paramètre :
+            filepath (str) : Chemin du fichier.
+        Retour :
+            List[Tournament] : Liste des objets tournoi.
+        """
+        pass

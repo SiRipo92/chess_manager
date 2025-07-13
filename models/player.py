@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List, Optional
 
 class Player:
     """
@@ -9,29 +10,15 @@ class Player:
         first_name (str) : Prénom du joueur.
         birth_date (str) : Date de naissance (format YYYY-MM-DD).
         national_id (str) : Identifiant national unique (ex : AB12345).
-        total_points (float) : Nombre total de points cumulés.
-        wins (float) : Nombre de victoires (1.0 point par victoire).
-        losses (float) : Nombre de défaites (0.0 point).
-        draws (float) : Nombre de matchs nuls (0.5 point).
-        match_count (int) : Nombre total de matchs joués.
-        tournaments_won (int) : Nombre total de tournois gagnés.
-        date_enrolled (str) : Date d'inscription (format YYYY-MM-DD)
+        date_enrolled (str) : Date d'inscription (format YYYY-MM-DD).
     """
 
-    def __init__( self, last_name, first_name, birth_date, national_id ) -> None:
+    def __init__(self, last_name: str, first_name: str, birth_date: str, national_id: str) -> None:
         self.last_name = last_name
         self.first_name = first_name
         self.birth_date = birth_date
         self.national_id = national_id
-
-        # Statistiques initialisées à zéro
-        self.total_points = 0.0
-        self.wins = 0.0
-        self.losses = 0.0
-        self.draws = 0.0
-        self.match_count = 0
-        self.tournaments_won = 0
-        self.enrollment_date = datetime.now().strftime("%Y-%m-%d")
+        self.date_enrolled = datetime.now().strftime("%Y-%m-%d")
 
     @property
     def age(self) -> int:
@@ -42,15 +29,51 @@ class Player:
         today = datetime.today()
         return today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
 
-
     def record_match(self, result: str) -> None:
         """
-        Met à jour les statistiques du joueur après un match.
+        Réagit à un résultat de match individuel (victoire, défaite, nul).
+        Cette fonction peut être utilisée pour des notifications ou journalisation.
+
         Paramètre :
-            result (str) : Résultat du match pour ce joueur ("win", "loss", "draw").
+            result (str) : Résultat du match ("win", "loss", "draw").
         """
         pass
 
-    # def record_tournament_win()
-    # def get_win_ratio()
-    # def get_ranking_score()
+    def get_ranking_score(self, tournament) -> float:
+        """
+        Calcule le score total du joueur dans un tournoi donné.
+        Paramètre :
+            tournament (Tournament) : Le tournoi concerné.
+        Retourne :
+            float : Total de points accumulés.
+        """
+        pass
+
+    def get_stats_summary(self, tournament) -> str:
+        """
+        Retourne un résumé des performances du joueur dans un tournoi.
+        Paramètre :
+            tournament (Tournament) : Le tournoi concerné.
+        Retourne :
+            str : Statistiques sous forme de chaîne.
+        """
+        pass
+
+    def save_to_file(self, filepath: str) -> None:
+        """
+        Sauvegarde les informations du joueur dans un fichier JSON.
+        Paramètre :
+            filepath (str) : Chemin du fichier de destination.
+        """
+        pass
+
+    @staticmethod
+    def load_all_players(filepath: str) -> List["Player"]:
+        """
+        Charge tous les joueurs enregistrés à partir d’un fichier JSON.
+        Paramètre :
+            filepath (str) : Chemin du fichier contenant les données.
+        Retourne :
+            List[Player] : Liste des joueurs chargés.
+        """
+        pass
