@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from models.player import Player
+from chess_manager.models.player import Player
 
 
 def prompt_new_player() -> Tuple[str, str, str, str]:

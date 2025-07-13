@@ -1,5 +1,5 @@
 from typing import Tuple, Dict
-from models.player import Player
+from chess_manager.models.player import Player
 
 
 class Match:
@@ -27,7 +27,8 @@ class Match:
             score1 (float) : Score du joueur 1.
             score2 (float) : Score du joueur 2.
         """
-        pass
+        self.score1 = score1
+        self.score2 = score2
 
     def get_result(self) -> Tuple[str, str]:
         """

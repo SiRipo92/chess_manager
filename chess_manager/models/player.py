@@ -79,7 +79,7 @@ class Player:
 
         # Réécrit le fichier avec tous les joueurs, y compris le nouveau
         with open(filepath, "w", encoding="utf-8") as file:
-            json.dump([p._to_dict() for p in players], file, indent=4, ensure_ascii=False)
+            json.dump([p.to_dict() for p in players], file, indent=4, ensure_ascii=False)
 
     @staticmethod
     def load_all_players(filepath: str) -> List["Player"]:
@@ -88,7 +88,7 @@ class Player:
         """
         with open(filepath, "r", encoding="utf-8") as file:
             data = json.load(file)  # Liste de dictionnaires
-            return [Player._from_dict(p) for p in data]  # Transforme chaque dict en instance Player
+            return [Player.from_dict(p) for p in data]  # Transforme chaque dict en instance Player
 
     def to_dict(self) -> dict:
         """

@@ -5,3 +5,6 @@ __pycache__/
 env/
 flake8_rapport/
 data/*.json
+
+.coverage
+chess_manager/tests/reports/

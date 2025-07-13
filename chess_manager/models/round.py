@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Dict
-from models.match import Match
+from chess_manager.models.match import Match
 
 
 class Round:
