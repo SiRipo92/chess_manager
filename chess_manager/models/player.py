@@ -17,7 +17,15 @@ class Player:
         tournaments_won(): integer (ex. 1)
     """
 
-    def __init__(self, last_name: str, first_name: str, birthdate: str, national_id: str, match_history=None, tournaments_won=0) -> None:
+    def __init__(
+            self,
+            last_name: str,
+            first_name: str,
+            birthdate: str,
+            national_id: str,
+            match_history=None,
+            tournaments_won=0
+    ) -> None:
         self.last_name = last_name
         self.first_name = first_name
         self.birthdate = birthdate
@@ -68,7 +76,6 @@ class Player:
         wins = sum(1 for m in self.match_history if m["résultat"] == "victoire")
         draws = sum(1 for m in self.match_history if m["résultat"] == "nul")
         return wins * 1.0 + draws * 0.5
-
 
     def get_ranking_score(self, tournament) -> float:
         """
@@ -162,8 +169,8 @@ class Player:
             first_name=data["first_name"],
             birthdate=data["birthdate"],
             national_id=data["national_id"],
-            match_history = data.get("match_history", []),
-            tournaments_won = data.get("tournaments_won", 0)
+            match_history=data.get("match_history", []),
+            tournaments_won=data.get("tournaments_won", 0)
         )
         # Recharge la date d'inscription si elle existe dans le fichier
         player.date_enrolled = data.get("date_enrolled", datetime.now().strftime("%Y-%m-%d"))

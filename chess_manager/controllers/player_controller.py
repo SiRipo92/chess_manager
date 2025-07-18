@@ -128,21 +128,21 @@ class PlayerController:
         return sorted(players, key=lambda p: (p.last_name.lower(), p.first_name.lower()), reverse=reverse)
 
     @staticmethod
-    def sort_players_by_ranking( players: List[Player]) -> List[Player]:
+    def sort_players_by_ranking(players: List[Player]) -> List[Player]:
         """
         Trie par score total décroissant (méthode get_total_score()).
         """
         return sorted(players, key=lambda p: p.get_total_score(), reverse=True)
 
     @staticmethod
-    def find_players_by_id( players: List[Player], query: str) -> List[Player]:
+    def find_players_by_id(players: List[Player], query: str) -> List[Player]:
         """
         Filtre les joueurs dont l’ID contient la sous-chaîne « query » (insensible à la casse).
         """
         return [p for p in players if query.lower() in p.national_id.lower()]
 
     @staticmethod
-    def find_players_by_name( players: List[Player], query: str) -> List[Player]:
+    def find_players_by_name(players: List[Player], query: str) -> List[Player]:
         """
         Filtre les joueurs dont le NOM de famille contient « query ».
         """
@@ -252,7 +252,7 @@ class PlayerController:
             elif action == "2":
                 try:
                     stats = player.get_stats_summary()
-                    player_views.display_full_player_profile(player)
+                    player_views.display_full_player_profile(stats)
                 except Exception as e:
                     player_views.display_error_message(f"Erreur lors de l'affichage des stats : {e}")
 
@@ -264,7 +264,7 @@ class PlayerController:
 
             else:
                 player_views.display_error_message("Option invalide.")
-    
+
     def handle_user_sort_filter_menu(self) -> str:
         while True:
             players = self.load_all_players()

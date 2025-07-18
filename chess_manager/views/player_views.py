@@ -2,10 +2,10 @@ from typing import List, Tuple
 import questionary
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
 from chess_manager.models.player import Player
 
 console = Console()
+
 
 def prompt_new_player() -> Tuple[str, str, str, str]:
     """
@@ -69,6 +69,7 @@ def display_all_players(players: List[Player]):
         )
     console.print(table)
 
+
 def prompt_player_national_id(prompt="Entrez l'identifiant national d'échecs du joueur : ") -> str:
     """
     Invite l'utilisateur à saisir un identifiant national.
@@ -79,6 +80,7 @@ def prompt_player_national_id(prompt="Entrez l'identifiant national d'échecs du
         str : L'identifiant entré.
     """
     return questionary.text(prompt).ask().strip().upper()
+
 
 def prompt_match_result() -> Tuple[str, str]:
     """
@@ -101,12 +103,12 @@ def prompt_match_result() -> Tuple[str, str]:
         console.print("\n⛔ [red]Entrée interrompue.[/red]")
         return "", ""
 
+
 def prompt_player_name_filter():
     """
     Invite à saisir un nom ou une chaîne de caractères pour filtrer les joueurs.
     """
     return questionary.text("Entrez une chaîne pour trouver un joueur par nom de famille :").ask()
-
 
 
 def show_player_main_menu() -> str:
@@ -130,6 +132,7 @@ def show_player_main_menu() -> str:
     except (EOFError, KeyboardInterrupt):
         console.print("\n⛔ [red]Entrée interrompue. Retour au menu principal.[/red]")
         return "7"
+
 
 def show_player_sort_filter_menu() -> str:
     """
@@ -156,6 +159,7 @@ def show_player_sort_filter_menu() -> str:
         console.print("\n⛔ [red]Entrée interrompue. Retour au menu principal.[/red]")
         return "8"
 
+
 def display_player_identity(player: Player):
     """
     Affiche l’identité d’un joueur sélectionné.
@@ -173,6 +177,7 @@ def display_player_identity(player: Player):
     except Exception as e:
         print(f"❌ Erreur lors de la récupération des statistiques : {e}")
 
+
 def display_stats_summary(stats: dict):
     """
     Affiche proprement les statistiques retournées par get_stats_summary().
@@ -183,6 +188,7 @@ def display_stats_summary(stats: dict):
     for key, value in stats.items():
         table.add_row(key, str(value))
     console.print(table)
+
 
 def display_full_player_profile(player: Player):
     """
@@ -213,6 +219,7 @@ def display_full_player_profile(player: Player):
     table.add_row("Tournois gagnés", str(stats["Tournois gagnés"]))
 
     console.print(table)
+
 
 def display_user_action_menu_for_player_page(player: Player) -> str:
     """
