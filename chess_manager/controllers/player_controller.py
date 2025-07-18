@@ -252,14 +252,14 @@ class PlayerController:
             elif action == "2":
                 try:
                     stats = player.get_stats_summary()
-                    player_views.display_stats_summary(stats)
+                    player_views.display_full_player_profile(player)
                 except Exception as e:
                     player_views.display_error_message(f"Erreur lors de l'affichage des stats : {e}")
 
             elif action == "3":
                 return "return_to_players"
 
-            elif action == "5":
+            elif action == "4":
                 return "return_to_main"
 
             else:
