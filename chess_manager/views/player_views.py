@@ -159,8 +159,15 @@ def display_player_identity(player: Player):
     except Exception as e:
         print(f"❌ Erreur lors de la récupération des statistiques : {e}")
 
+def display_stats_summary(stats: dict):
+    """
+    Affiche proprement les statistiques retournées par get_stats_summary().
+    """
+    print("\n📊 STATISTIQUES D'UN JOUEUR :\n")
+    for key, value in stats.items():
+        print(f"   {key} : {value}")
 
-def display_player_action_menu(player: Player) -> str:
+def display_user_action_menu_for_player_page(player: Player) -> str:
     """
     Affiche les actions possibles sur un joueur (fiche individuelle).
 
@@ -174,8 +181,7 @@ def display_player_action_menu(player: Player) -> str:
         print(f"\n---- FICHE JOUEUR : {player.first_name} {player.last_name} (ID: {player.national_id}) ----")
         print("1. MODIFIER LES INFO D'UN JOUEUR")
         print("2. CONSULTER LES STATISTIQUES D'UN JOUEUR")
-        print("3. INSCRIRE À UN TOURNOI ( *** bientôt disponible ***)")
-        print("4. RETOUR AU MENU DES JOUEURS")
+        print("3. RETOUR AU MENU DES JOUEURS")
         print("5. RETOUR AU MENU PRINCIPAL")
         return input("Votre choix : ").strip()
     except (EOFError, KeyboardInterrupt):
