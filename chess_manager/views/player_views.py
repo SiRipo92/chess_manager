@@ -1,6 +1,11 @@
 from typing import List, Tuple
+import questionary
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
 from chess_manager.models.player import Player
 
+console = Console()
 
 def prompt_new_player() -> Tuple[str, str, str, str]:
     """
@@ -9,11 +14,11 @@ def prompt_new_player() -> Tuple[str, str, str, str]:
     Retour :
         Tuple contenant le nom, prénom, date de naissance et identifiant national du joueur.
     """
-    print("\n + Ajout d'un nouveau joueur : ")
-    last_name = input("Nom de famille : ")
-    first_name = input("Prénom : ")
-    birthdate = input("Date de naissance (format : YYYY-MM-DD) : ")
-    national_id = input("Identifiant national d’échecs (format : AB12345) : ")
+    console.print("\n[bold cyan]+ Ajout d'un nouveau joueur :[/bold cyan]")
+    last_name = questionary.text("Nom de famille").ask()
+    first_name = questionary.text("Prénom").ask()
+    birthdate = questionary.text("Date de naissance (format : YYYY-MM-DD)").ask()
+    national_id = questionary.text("Identifiant national d’échecs (format : AB12345)").ask()
     return last_name, first_name, birthdate, national_id
 
 
@@ -21,7 +26,7 @@ def confirm_player_added():
     """
     Affiche un message de confirmation après l'ajout d’un joueur.
     """
-    print("✅ Le joueur a bien été ajouté à la base de données.\n")
+    console.print("✅ [green]Le joueur a bien été ajouté à la base de données.[/green]\n")
 
 
 def display_error_message(reason: str):
@@ -31,7 +36,7 @@ def display_error_message(reason: str):
     Paramètre :
         reason (str) : Message décrivant la cause de l’échec (ex : format invalide, ID existant).
     """
-    print(f"❌ Erreur : {reason}")
+    console.print(f"❌ [red]Erreur : {reason}[/red]")
 
 
 def display_all_players(players: List[Player]):
@@ -42,15 +47,27 @@ def display_all_players(players: List[Player]):
         players (List[Player]) : Liste d'objets Player à afficher.
     """
     if not players:
-        print("Aucun joueur enregistré.")
+        console.print("[yellow]Aucun joueur enregistré.[/yellow]")
         return
 
-    print("\n📋 Liste des joueurs enregistrés :\n")
-    for idx, player in enumerate(players, 1):
-        print(f"{idx}. {player.last_name.upper()}, {player.first_name} (ID: {player.national_id})")
-        print(f"   Né(e) le : {player.birthdate} — Âge : {player.age}")
-        print(f"   Date d'inscription : {player.date_enrolled}\n")
+    table = Table(title="📋 Joueurs enregistrés")
+    table.add_column("#", style="cyan")
+    table.add_column("Nom complet")
+    table.add_column("ID")
+    table.add_column("Naissance")
+    table.add_column("Âge")
+    table.add_column("Inscription")
 
+    for idx, player in enumerate(players, 1):
+        table.add_row(
+            str(idx),
+            f"{player.last_name.upper()}, {player.first_name}",
+            player.national_id,
+            player.birthdate,
+            str(player.age),
+            player.date_enrolled
+        )
+    console.print(table)
 
 def prompt_player_national_id(prompt="Entrez l'identifiant national d'échecs du joueur : ") -> str:
     """
@@ -61,8 +78,7 @@ def prompt_player_national_id(prompt="Entrez l'identifiant national d'échecs du
     Retour :
         str : L'identifiant entré.
     """
-    return input(prompt).strip().upper()
-
+    return questionary.text(prompt).ask().strip().upper()
 
 def prompt_match_result() -> Tuple[str, str]:
     """
@@ -73,22 +89,23 @@ def prompt_match_result() -> Tuple[str, str]:
         Tuple contenant le nom du match et le résultat abrégé (V, D, N).
     """
     try:
-        match_name = input("Nom du match (ex: 'Ronde 1') : ")
-        result = input("Résultat (V = victoire, D = défaite, N = nul) : ")
+        match_name = questionary.text("Nom du match (ex: 'Ronde 1')").ask()
+        result = questionary.select(
+            "Résultat",
+            choices=["V", "D", "N"]
+        ).ask()
         return match_name, result
     except (EOFError, KeyboardInterrupt):
         # EOFError : saisie interrompue via redirection ou fin de fichier
         # KeyboardInterrupt : interruption clavier (ex: Ctrl+C)
-        print("\n⛔ Entrée interrompue.")
+        console.print("\n⛔ [red]Entrée interrompue.[/red]")
         return "", ""
-
 
 def prompt_player_name_filter():
     """
     Invite à saisir un nom ou une chaîne de caractères pour filtrer les joueurs.
     """
-    return input("Entrez une chaîne pour trouver un joueur par nom de famille : ")
-
+    return questionary.text("Entrez une chaîne pour trouver un joueur par nom de famille :").ask()
 
 def display_player_stats(stats: str):
     """
@@ -97,8 +114,7 @@ def display_player_stats(stats: str):
     Paramètre :
         stats (str) : Chaîne formatée générée par get_stats_summary().
     """
-    print(f"\n📊 STATISTIQUES D'UN JOUEUR :\n{stats}")
-
+    console.print(Panel(f"{stats}", title="📊 STATISTIQUES D'UN JOUEUR"))
 
 def show_player_main_menu() -> str:
     """
@@ -108,15 +124,18 @@ def show_player_main_menu() -> str:
         Intercepte EOFError ou KeyboardInterrupt pour retourner à un état sûr.
     """
     try:
-        print("\n---- MENU DES JOUEURS ----")
-        print("1. VOIR TOUS LES JOUEURS INSCRITS")
-        print("2. FILTRER / TRIER LES JOUEURS INSCRITS")
-        print("3. VOIR LE MENU D'UN JOUEUR INSCRIT")
-        print("4. AJOUTER UN JOUEUR INSCRIT")
-        print("5. RETOUR AU MENU PRINCIPAL")
-        return input("Votre choix : ")
+        return questionary.select(
+            "---- MENU DES JOUEURS ----",
+            choices=[
+                "1. VOIR TOUS LES JOUEURS INSCRITS",
+                "2. FILTRER / TRIER LES JOUEURS INSCRITS",
+                "3. VOIR LE MENU D'UN JOUEUR INSCRIT",
+                "4. AJOUTER UN NOUVEAU JOUEUR",
+                "5. RETOUR AU MENU PRINCIPAL"
+            ]
+        ).ask()[0]  # return the first character (e.g. '1')
     except (EOFError, KeyboardInterrupt):
-        print("\n⛔ Entrée interrompue. Retour au menu principal.")
+        console.print("\n⛔ [red]Entrée interrompue. Retour au menu principal.[/red]")
         return "7"
 
 def show_player_sort_filter_menu() -> str:
@@ -127,20 +146,22 @@ def show_player_sort_filter_menu() -> str:
         str : Choix de l’utilisateur.
     """
     try:
-        print("\n-- MENU DE FILTRAGE OU TRI DES JOUEURS  --")
-        print("1. TRIER LES JOUEURS PAR NOM DE FAMILLE (A-Z)")
-        print("2. TRIER LES JOUEURS PAR NOM DE FAMILLE (Z-A)")
-        print("3. TRIER LES JOUEURS PAR CLASSEMENT")
-        print("4. TROUVER UN JOUEUR PAR IDENTIFIANT NATIONAL D'ÉCHECS")
-        print("5. TROUVER UN JOUEUR PAR NOM DE FAMILLE")
-        print("6. VOIR LE MENU D'UN JOUEUR INSCRIT (Fiche Joueur)")
-        print("7. RETOUR AU MENU DES JOUEURS")
-        print("8. QUITTER LE PROGRAMME")
-        return input("Votre choix : ")
+        return questionary.select(
+            "-- MENU DE FILTRAGE OU TRI DES JOUEURS  --",
+            choices=[
+                "1. TRIER LES JOUEURS PAR NOM DE FAMILLE (A-Z)",
+                "2. TRIER LES JOUEURS PAR NOM DE FAMILLE (Z-A)",
+                "3. TRIER LES JOUEURS PAR CLASSEMENT",
+                "4. TROUVER UN JOUEUR PAR IDENTIFIANT NATIONAL D'ÉCHECS",
+                "5. TROUVER UN JOUEUR PAR NOM DE FAMILLE",
+                "6. VOIR LE MENU D'UN JOUEUR INSCRIT (Fiche Joueur)",
+                "7. RETOUR AU MENU DES JOUEURS",
+                "8. QUITTER LE PROGRAMME"
+            ]
+        ).ask()[0]
     except (EOFError, KeyboardInterrupt):
-        print("\n⛔ Entrée interrompue. Retour au menu principal.")
+        console.print("\n⛔ [red]Entrée interrompue. Retour au menu principal.[/red]")
         return "8"
-
 
 def display_player_identity(player: Player):
     """
@@ -149,13 +170,13 @@ def display_player_identity(player: Player):
     Paramètre :
         player (Player) : Objet représentant le joueur.
     """
-    print(f"\n🧾 JOUEUR SÉLECTIONNÉ : {player.first_name} {player.last_name} (ID: {player.national_id})")
+    console.print(f"\n🧾 [bold]{player.first_name} {player.last_name}[/bold] (ID: {player.national_id})")
 
     try:
         stats = player.get_stats_summary(None)
-        print("\n📊 Statistiques actuelles :")
+        console.print("\n📊 [bold]Statistiques actuelles :[/bold]")
         for key, value in stats.items():
-            print(f"   - {key} : {value}")
+            console.print(f"   - {key} : {value}")
     except Exception as e:
         print(f"❌ Erreur lors de la récupération des statistiques : {e}")
 
@@ -163,9 +184,12 @@ def display_stats_summary(stats: dict):
     """
     Affiche proprement les statistiques retournées par get_stats_summary().
     """
-    print("\n📊 STATISTIQUES D'UN JOUEUR :\n")
+    table = Table(title="📊 Statistiques du joueur")
+    table.add_column("Statut")
+    table.add_column("Valeur")
     for key, value in stats.items():
-        print(f"   {key} : {value}")
+        table.add_row(key, str(value))
+    console.print(table)
 
 def display_user_action_menu_for_player_page(player: Player) -> str:
     """
@@ -178,12 +202,15 @@ def display_user_action_menu_for_player_page(player: Player) -> str:
         str : Choix de l’utilisateur.
     """
     try:
-        print(f"\n---- FICHE JOUEUR : {player.first_name} {player.last_name} (ID: {player.national_id}) ----")
-        print("1. MODIFIER LES INFO D'UN JOUEUR")
-        print("2. CONSULTER LES STATISTIQUES D'UN JOUEUR")
-        print("3. RETOUR AU MENU DES JOUEURS")
-        print("5. RETOUR AU MENU PRINCIPAL")
-        return input("Votre choix : ").strip()
+        return questionary.select(
+            f"---- FICHE JOUEUR : {player.first_name} {player.last_name} (ID: {player.national_id}) ----",
+            choices=[
+                "1. MODIFIER LES INFO D'UN JOUEUR",
+                "2. CONSULTER LES STATISTIQUES D'UN JOUEUR",
+                "3. RETOUR AU MENU DES JOUEURS",
+                "4. RETOUR AU MENU PRINCIPAL"
+            ]
+        ).ask()[0]
     except (EOFError, KeyboardInterrupt):
-        print("\n⛔ Entrée interrompue.")
+        console.print("\n⛔ [red]Entrée interrompue.[/red]")
         return "5"
