@@ -1,0 +1,14 @@
+{
+  "location": "Nanterre",
+  "start_date": "2025-07-19",
+  "end_date": "2025-07-19",
+  "start_time": "",
+  "end_time": "",
+  "description": "Wonderful match!",
+  "number_rounds": 4,
+  "current_round_number": 0,
+  "players": [],
+  "rounds": [],
+  "is_completed": false,
+  "winner_id": null
+}

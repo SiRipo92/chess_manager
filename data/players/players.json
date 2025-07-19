@@ -1,0 +1,56 @@
+[
+  {
+    "last_name": "Ripoche",
+    "first_name": "Julien",
+    "birthdate": "1990-06-23",
+    "national_id": "AB05835",
+    "date_enrolled": "2025-07-13",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Ripoche",
+    "first_name": "Sierra",
+    "birthdate": "1990-11-04",
+    "national_id": "EF12345",
+    "date_enrolled": "2025-07-13",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Dupont",
+    "first_name": "Jérémie",
+    "birthdate": "2000-03-23",
+    "national_id": "PM24582",
+    "date_enrolled": "2025-07-19",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Lester",
+    "first_name": "Tori",
+    "birthdate": "1998-05-05",
+    "national_id": "CD28078",
+    "date_enrolled": "2025-07-19",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Rider",
+    "first_name": "Andréa",
+    "birthdate": "1992-04-23",
+    "national_id": "EP38491",
+    "date_enrolled": "2025-07-19",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Blunt",
+    "first_name": "Emilie",
+    "birthdate": "1979-06-02",
+    "national_id": "GH18579",
+    "date_enrolled": "2025-07-19",
+    "match_history": [],
+    "tournaments_won": 0
+  }
+]

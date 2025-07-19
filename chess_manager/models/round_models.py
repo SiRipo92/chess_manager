@@ -33,19 +33,22 @@ class Round:
         Paramètre :
             match (Match) : Le match à ajouter.
         """
-        pass
+        self.matches.append(match)
 
     def end_round(self) -> None:
         """
         Marque la fin du tour en enregistrant l’heure actuelle comme heure de fin.
         """
-        pass
+        self.end_time = datetime.now().isoformat()
 
     def play_all_matches(self) -> None:
         """
         Exécute tous les matchs du tour (simulation ou saisie manuelle des résultats).
+        À implémenter : logique de simulation ou saisie manuelle.
         """
-        pass
+        # Placeholder. Implement when scoring logic enters scope.
+        for match in self.matches:
+            pass  # no-op
 
     def to_dict(self) -> Dict:
         """
@@ -54,17 +57,17 @@ class Round:
         Retour :
             dict : Représentation sérialisée du tour.
         """
-        pass
+        return {
+            "round_number": self.round_number,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "matches": [match.to_dict() for match in self.matches],
+        }
 
     @classmethod
     def from_dict(cls, data: Dict) -> "Round":
-        """
-        Crée une instance de Round à partir d’un dictionnaire (données JSON).
-
-        Paramètre :
-            data (dict) : Données sérialisées du tour.
-
-        Retour :
-            Round : Instance reconstituée.
-        """
-        pass
+        round_instance = cls(round_number=data["round_number"])
+        round_instance.start_time = data.get("start_time", "")
+        round_instance.end_time = data.get("end_time", "")
+        round_instance.matches = [Match.from_dict(m) for m in data.get("matches", [])]
+        return round_instance

@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
+from chess_manager.constants.datetime_formats import DATE_FORMAT
 
-DATE_FORMAT = "%Y-%m-%d"
 MIN_YEAR = 1915
 MAX_DATE_YEAR = datetime.now().year
 

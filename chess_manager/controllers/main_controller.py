@@ -1,7 +1,8 @@
 from chess_manager.views import main_views
 from chess_manager.views import player_views
 from chess_manager.controllers.player_controller import PlayerController
-
+from chess_manager.controllers.tournament_controller import handle_creation_of_tournament
+from chess_manager.views.tournament_views import show_tournament_main_menu
 
 def handle_main_menu(controller: PlayerController) -> None:
     """
@@ -17,7 +18,7 @@ def handle_main_menu(controller: PlayerController) -> None:
             controller.manage_players()
 
         elif choice == "2":
-            print("\n\U0001F6E0️ La gestion des tournois n'est pas encore disponible.")
+           handle_creation_of_tournament()
 
         elif choice == "3":
             print("\n👋 Au revoir !")
@@ -25,3 +26,23 @@ def handle_main_menu(controller: PlayerController) -> None:
 
         else:
             player_views.display_error_message("Option invalide.")
+
+def display_tournament_management_menu():
+    """
+    Affiche le menu de gestion de tournois et gère la navigation.
+    """
+    while True:
+        choice = show_tournament_main_menu()
+
+        if choice.startswith("1"):
+            handle_creation_of_tournament()
+
+        elif choice.startswith("2"):
+            print("📋 Fonction d’affichage de tournoi à implémenter.")
+
+        elif choice.startswith("3"):
+            print("✅ Fonction de conclusion de tournoi à implémenter.")
+
+        elif choice.startswith("4"):
+            print("🔙 Retour au menu principal.")
+            break
