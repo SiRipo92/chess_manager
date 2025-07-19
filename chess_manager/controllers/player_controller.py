@@ -230,7 +230,7 @@ class PlayerController:
         if not match_name or not result:
             return
         try:
-            player.record_match(match_name, result)
+            player.record_match_result(match_name, result)
             players = self.load_players()
             for i, p in enumerate(players):
                 if p.national_id == player.national_id:
