@@ -1,3 +1,37 @@
+# ==============================
+# Player Controller Structure Map
+# ==============================
+#
+# 1. Initialisation & Persistence
+#    - __init__
+#    - _ensure_file_exists
+#    - load_players
+#    - save_players
+#
+# 2. Player Creation
+#    - add_new_player
+#    - handle_add_new_player
+#
+# 3. Player Retrieval
+#    - get_player_by_id
+#
+# 4. Sorting & Searching
+#    - sort_players_by_name
+#    - sort_players_by_ranking,
+#    - find_player_by_id
+#    - find_player_by_name
+#
+# 5. Statistics & Match History
+#    - get_player_statistics
+#    - record_match_for_player
+#
+# 6. Player Management
+#    - manage_players
+#    - update_player_info
+#    - _save_player
+#    - handle_actions_on_player_page_menu
+#    - handle_user_sort_filter_menu
+
 import json
 from json import JSONDecodeError
 import os
@@ -7,11 +41,8 @@ from typing import List, Optional, Tuple
 from chess_manager.models.player_models import Player
 from chess_manager.constants.player_fields import VALIDATION_MAP
 from chess_manager.views import player_views
-from chess_manager.utils.player_validators import is_valid_id, is_valid_birthdate
-
 
 console = Console()
-
 
 # CONSTANTS
 ACTION_UPDATE_INFO = "1"
@@ -23,6 +54,10 @@ class PlayerController:
     """
     Gère les opérations CRUD et de consultation/statistiques sur les joueurs.
     """
+
+    # ===============================
+    # 1. Initialisation & Persistence
+    # ===============================
 
     def __init__(self, file_path: str) -> None:
         """
@@ -38,7 +73,7 @@ class PlayerController:
         if not os.path.exists(self.file_path):
             try:
                 with open(self.file_path, "w", encoding="utf-8") as f:
-                    json.dump([], f, indent=4)
+                    json.dump([], f, indent=4)  # type: ignore
             except IOError as e:
                 raise IOError(f"Impossible de créer {self.file_path} : {e}") from e
 
@@ -77,6 +112,10 @@ class PlayerController:
         except IOError as e:
             print(f"❌ Erreur de sauvegarde : {e}")
 
+    # ===================
+    # 2. Player Creation
+    # ===================
+
     def add_new_player(
             self, last_name: str, first_name: str, birthdate: str, national_id: str
     ) -> Tuple[bool, Optional[str]]:
@@ -95,7 +134,7 @@ class PlayerController:
             "Identifiant national": national_id,
         }
 
-        # Centralized validation loop
+        # Valide les champs saisis via la map VALIDATION_MAP
         for label, value in field_inputs.items():
             validator = VALIDATION_MAP.get(label)
             if not value:
@@ -105,6 +144,7 @@ class PlayerController:
 
         try:
             players = self.load_players()
+            # Empêche la duplication d'identifiants
             if any(p.national_id == national_id for p in players):
                 return False, "Cet identifiant est déjà utilisé."
 
@@ -134,6 +174,10 @@ class PlayerController:
         else:
             player_views.display_error_message(message)
 
+    # ======================
+    # 3. Player Retrieval
+    # ======================
+
     def get_player_by_id(self, national_id: str) -> Optional[Player]:
         """
         Récupère un joueur à partir de son identifiant national.
@@ -158,6 +202,10 @@ class PlayerController:
             player_views.display_error_message(f"Erreur de lecture des joueurs : {e}")
             return None
 
+    # ======================
+    # 4. Sorting & Searching
+    # ======================
+
     @staticmethod
     def sort_players_by_name(players: List[Player], reverse: bool = False) -> List[Player]:
         """
@@ -177,18 +225,22 @@ class PlayerController:
         return sorted(players, key=lambda p: p.get_total_score(), reverse=True)
 
     @staticmethod
-    def find_players_by_id(players: List[Player], query: str) -> List[Player]:
+    def find_player_by_id(players: List[Player], query: str) -> List[Player]:
         """
         Filtre les joueurs dont l’ID contient la sous-chaîne « query » (insensible à la casse).
         """
         return [p for p in players if query.lower() in p.national_id.lower()]
 
     @staticmethod
-    def find_players_by_name(players: List[Player], query: str) -> List[Player]:
+    def find_player_by_name(players: List[Player], query: str) -> List[Player]:
         """
         Filtre les joueurs dont le NOM de famille contient « query ».
         """
         return [p for p in players if query.lower() in p.last_name.lower()]
+
+    # ======================
+    # 5. Statistics & Match History
+    # ======================
 
     def get_player_statistics(self) -> None:
         """
@@ -243,6 +295,9 @@ class PlayerController:
         except Exception as e:
             player_views.display_error_message(f"Erreur inattendue : {e}")
 
+    # ======================
+    # 6. Player Management
+    # ======================
     def manage_players(self):
         while True:
             subchoice = player_views.show_player_main_menu()
@@ -390,12 +445,12 @@ class PlayerController:
 
             elif choice == "4":
                 partial_id = player_views.prompt_player_national_id("Entrez une partie de l’ID à rechercher : ")
-                filtered_players = self.find_players_by_id(players, partial_id)
+                filtered_players = self.find_player_by_id(players, partial_id)
                 player_views.display_all_players(filtered_players)
 
             elif choice == "5":
                 partial_name = player_views.prompt_player_name_filter()
-                filtered_players = self.find_players_by_name(players, partial_name)
+                filtered_players = self.find_player_by_name(players, partial_name)
                 player_views.display_all_players(filtered_players)
 
             elif choice == "6":

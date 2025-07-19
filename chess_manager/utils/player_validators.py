@@ -14,10 +14,10 @@ def is_valid_birthdate(birthdate: str) -> bool:
     - Année comprise entre MIN_YEAR et MAX_DATE_YEAR
     """
     try:
-        birth = datetime.strptime(birthdate, DATE_FORMAT)
-        today = datetime.today()
+        birth = datetime.strptime(birthdate, DATE_FORMAT).date()
+        today = datetime.today().date()
 
-        # Must be in the past and within acceptable bounds
+        # Must be strictly in the past
         if birth >= today:
             return False
         if birth.year < MIN_YEAR or birth.year > MAX_DATE_YEAR:

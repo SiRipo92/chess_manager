@@ -252,7 +252,7 @@ class Player:
 
         # Réécrit le fichier avec tous les joueurs, y compris le nouveau
         with open(filepath, "w", encoding="utf-8") as file:
-            json.dump([p.to_dict() for p in players], file, indent=4, ensure_ascii=False) # type: ignore
+            json.dump([p.to_dict() for p in players], file, indent=4, ensure_ascii=False)  # type: ignore
 
     @staticmethod
     def load_all_players(filepath: str) -> List["Player"]:
@@ -262,5 +262,3 @@ class Player:
         with open(filepath, "r", encoding="utf-8") as file:
             data = json.load(file)  # Liste de dictionnaires
             return [Player.from_dict(p) for p in data]  # Transforme chaque dict en instance Player
-
-
