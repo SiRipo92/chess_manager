@@ -5,20 +5,22 @@ This project is an offline, console-based chess tournament manager built with Py
 ## 📁 Project Structure
 
 ```bash
-chess_manager/         # Project namespace
-├── chess_maanager/    # Microservice package for the chess management tool 
-    ├── models/            # Contains Player, Match, Round, Tournament models
-    ├── controllers/       # Application logic (starting tournaments, progressing rounds)
-    ├── views/             # Text-based CLI interface using questionary and rich
-    ├── tests/             # Unit tests with nose2 and coverage
-├── repositories/      # Responsible for loading/saving data (JSON)
-├── data/              # Contains .json files for persistence
-├── main.py            # Application entry point
-├── requirements.txt   # List of Python dependencies
+chess_manager/                  # Project root
+├── chess_manager/             # Internal package containing core logic
+│   ├── controllers/           # Business logic (managing players, tournaments, rounds)
+│   ├── models/                # Data models (Player, Match, Round, Tournament)
+│   ├── views/                 # CLI views using `questionary` and `rich`
+│   ├── constants/             # Centralized constants (labels, validation rules, mappings)
+│   ├── utils/                 # Helper/validator functions for field inputs
+│
+├── repositories/              # Persistence layer for loading/saving JSON files
+├── data/                      # Directory containing JSON data files
+├── main.py                    # CLI entry point
+├── requirements.txt           # Python dependencies
 ├── .gitignore
-├── flake8_rapport/    # Linting report folder
-├── setup.cfg          # Setup configuration for nose, coverage and flake8 linting
-├── .github/           # Automated workflows for linting and testing
+├── flake8_rapport/            # HTML report output from flake8
+├── setup.cfg                  # Configuration for flake8 and coverage
+├── .github/                   # Linting CI via GitHub Actions
 ```
 
 ## 📦 Setup Instructions
@@ -56,26 +58,15 @@ chess_manager/         # Project namespace
     ```bash
     flake8 --max-line-length=119 --format=html --htmldir=flake8_rapport
     ```
-### Running Tests and Coverage
-This project uses nose2 for unit testing and coverage for code coverage analysis.
 
-1. Install test dependencies
-```bash
-pip install -r requirements.txt
-pip install nose2 coverage
-```
-2. Run all unit tests
-```bash
-nose2 -v
-```
-3. View coverage report in terminal
-```bash
-coverage report -m
-```
-4. Custom .coverage file location
-```bash
-coverage report -m
-```
+- Run linting checks on all Python files (.py) within the current directory (.) and all subdirectories, recursively.
+
+  ```bash
+  flake8 .
+  - ```
 
 ## 📋 License
 MIT License or School Submission — to be specified.
+
+# Author
+Sierra Ripoche

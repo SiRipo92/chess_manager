@@ -1,5 +1,5 @@
 from typing import List
-from chess_manager.models.tournament import Tournament
+from chess_manager.models.tournament_models import Tournament
 
 
 class TournamentRepository:

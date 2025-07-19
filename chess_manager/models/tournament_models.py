@@ -1,6 +1,6 @@
 from typing import List, Dict
-from chess_manager.models.player import Player
-from chess_manager.models.round import Round
+from chess_manager.models.player_models import Player
+from chess_manager.models.round_models import Round
 
 
 class Tournament:

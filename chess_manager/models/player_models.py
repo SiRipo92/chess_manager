@@ -1,6 +1,13 @@
 from datetime import datetime
 from typing import List, Dict
 import json
+from chess_manager.constants.player_fields import VALIDATION_MAP
+from chess_manager.utils.player_validators import DATE_FORMAT
+from chess_manager.constants.match_results import (
+    MATCH_RESULT_CODES,
+    MATCH_RESULT_POINTS
+)
+from chess_manager.utils.match_validators import is_valid_match_result_code
 
 
 class Player:
@@ -17,12 +24,22 @@ class Player:
         tournaments_won(): integer (ex. 1)
     """
 
-    def __init__(self, last_name: str, first_name: str, birthdate: str, national_id: str, match_history=None, tournaments_won=0) -> None:
-        self.last_name = last_name
-        self.first_name = first_name
+    def __init__(self, last_name: str, first_name: str, birthdate: str, national_id: str, match_history=None,
+                 tournaments_won=0) -> None:
+        if not VALIDATION_MAP["Nom de famille"](last_name):
+            raise ValueError("Nom de famille invalide.")
+        if not VALIDATION_MAP["Prénom"](first_name):
+            raise ValueError("Prénom invalide.")
+        if not VALIDATION_MAP["Date de naissance"](birthdate):
+            raise ValueError("Date de naissance invalide.")
+        if not VALIDATION_MAP["Identifiant national"](national_id):
+            raise ValueError("Identifiant national invalide.")
+
+        self.last_name = last_name.strip().title()
+        self.first_name = first_name.strip().title()
         self.birthdate = birthdate
-        self.national_id = national_id
-        self.date_enrolled = datetime.now().strftime("%Y-%m-%d")
+        self.national_id = national_id.strip().upper()
+        self.date_enrolled = datetime.now().strftime(DATE_FORMAT)
         self.match_history = match_history if match_history is not None else []
         self.tournaments_won = tournaments_won
 
@@ -31,9 +48,41 @@ class Player:
         """
         Calcule l'âge du joueur à partir de sa date de naissance.
         """
-        birth = datetime.strptime(self.birthdate, "%Y-%m-%d")
+        birth = datetime.strptime(self.birthdate, DATE_FORMAT)
         today = datetime.today()
         return today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+
+    def set_last_name(self, last_name: str) -> None:
+        """
+        Méthode utilisé afin de modifier le nom de famille du joueur.
+        """
+        if not VALIDATION_MAP["Nom de famille"](last_name):
+            raise ValueError("Nom de famille invalide.")
+        self.last_name = last_name.strip().title()
+
+    def set_first_name(self, first_name: str) -> None:
+        """
+        Méthode utilisé afin de modifier le prénom du joueur.
+        """
+        if not VALIDATION_MAP["Prénom"](first_name):
+            raise ValueError("Prénom invalide.")
+        self.first_name = first_name.strip().title()
+
+    def set_birthdate(self, birthdate: str) -> None:
+        """
+        Méthode utilisé afin de modifier la date de naissance du joueur.
+        """
+        if not VALIDATION_MAP["Date de naissance"](birthdate):
+            raise ValueError("Date de naissance invalide.")
+        self.birthdate = birthdate
+
+    def set_national_id(self, national_id: str) -> None:
+        """
+        Méthode utilisé afin de modifier l'ID national du joueur.
+        """
+        if not VALIDATION_MAP["Identifiant national"](national_id):
+            raise ValueError("Identifiant national invalide.")
+        self.national_id = national_id.strip().upper()
 
     def record_match(self, match_name: str, result: str) -> None:
         """
@@ -48,27 +97,19 @@ class Player:
             - "nul"
         """
         result = result.strip().upper()
-        mapping = {
-            "V": "victoire",
-            "D": "défaite",
-            "N": "nul"
-        }
-        if result not in mapping:
-            raise ValueError("Résultat invalide. Utilisez 'V' pour victoire, 'D' pour défaite ou 'N' pour nul.")
+        if not is_valid_match_result_code(result):
+            raise ValueError("Résultat invalide. Utilisez 'V', 'D' ou 'N'.")
 
         self.match_history.append({
             "match": match_name,
-            "résultat": mapping[result]
+            "résultat": MATCH_RESULT_CODES[result]
         })
 
     def get_total_score(self) -> float:
         """
         Calcule le score total du joueur (tous tournois confondus).
         """
-        wins = sum(1 for m in self.match_history if m["résultat"] == "victoire")
-        draws = sum(1 for m in self.match_history if m["résultat"] == "nul")
-        return wins * 1.0 + draws * 0.5
-
+        return sum(MATCH_RESULT_POINTS.get(m["résultat"], 0.0) for m in self.match_history)
 
     def get_ranking_score(self, tournament) -> float:
         """
@@ -95,16 +136,16 @@ class Player:
         wins = sum(1 for m in self.match_history if m["résultat"] == "victoire")
         losses = sum(1 for m in self.match_history if m["résultat"] == "défaite")
         draws = sum(1 for m in self.match_history if m["résultat"] == "nul")
-        points = wins * 1 + draws * 0.5
+        points = self.get_total_score()
 
         return {
             "Nom complet": f"{self.first_name} {self.last_name}",
             "Âge": self.age,
             "Date d'inscription": self.date_enrolled,
             "Total de matchs joués": total,
-            "✅ Victoires": wins,
-            "❌ Défaites": losses,
-            "🔁 Nuls": draws,
+            "Victoires": wins,
+            "Défaites": losses,
+            "Nuls": draws,
             "Points cumulés": points,
             "Tournois gagnés": self.tournaments_won,
         }
@@ -162,9 +203,9 @@ class Player:
             first_name=data["first_name"],
             birthdate=data["birthdate"],
             national_id=data["national_id"],
-            match_history = data.get("match_history", []),
-            tournaments_won = data.get("tournaments_won", 0)
+            match_history=data.get("match_history", []),
+            tournaments_won=data.get("tournaments_won", 0)
         )
         # Recharge la date d'inscription si elle existe dans le fichier
-        player.date_enrolled = data.get("date_enrolled", datetime.now().strftime("%Y-%m-%d"))
+        player.date_enrolled = data.get("date_enrolled", datetime.now().strftime(DATE_FORMAT))
         return player

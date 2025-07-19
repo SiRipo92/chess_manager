@@ -1,10 +1,21 @@
 import json
+from json import JSONDecodeError
 import os
-import re
-from typing import List, Optional
+from rich.console import Console
+from typing import List, Optional, Tuple
 
-from chess_manager.models.player import Player
+from chess_manager.models.player_models import Player
+from chess_manager.constants.player_fields import VALIDATION_MAP
 from chess_manager.views import player_views
+
+
+console = Console()
+
+
+# CONSTANTS
+ACTION_UPDATE_INFO = "1"
+ACTION_BACK_TO_PLAYERS = "2"
+ACTION_BACK_TO_MAIN = "3"
 
 
 class PlayerController:
@@ -12,41 +23,25 @@ class PlayerController:
     Gère les opérations CRUD et de consultation/statistiques sur les joueurs.
     """
 
-    def __init__(self, filepath: str) -> None:
+    def __init__(self, file_path: str) -> None:
         """
-        Initialise le contrôleur avec le chemin du fichier JSON de persistance.
-
-        Paramètre
-        ---------
-        filepath : str
-            Chemin absolu ou relatif vers le fichier « players.json ».
+        Initialise le contrôleur avec le chemin du fichier JSON des joueurs.
         """
-        self.filepath = filepath
-
-    @staticmethod
-    def _is_valid_id(national_id: str) -> bool:
-        """
-        Vérifie si l’ID est conforme au format : 2 lettres majuscules + 5 chiffres.
-
-        :param national_id: Identifiant national à valider.
-        :return: True si valide, False sinon.
-        """
-        return bool(re.match(r"^[A-Z]{2}[0-9]{5}$", national_id))
+        self.file_path = file_path  # 🔁 cette ligne est essentielle
+        self._ensure_file_exists()
 
     def _ensure_file_exists(self) -> None:
         """
-        Crée le fichier JSON vide si nécessaire afin d’éviter FileNotFoundError
-        lors de la première sauvegarde.
+        Crée un fichier JSON vide (liste) s’il n’existe pas encore.
         """
-        if not os.path.exists(self.filepath):
+        if not os.path.exists(self.file_path):
             try:
-                with open(self.filepath, "w", encoding="utf-8") as f:
-                    f.write("[]")
+                with open(self.file_path, "w", encoding="utf-8") as f:
+                    json.dump([], f, indent=4)
             except IOError as e:
-                # On laisse l’erreur remonter : l’appelant décidera quoi faire.
-                raise IOError(f"Impossible de créer {self.filepath} : {e}") from e
+                raise IOError(f"Impossible de créer {self.file_path} : {e}") from e
 
-    def load_all_players(self) -> List[Player]:
+    def load_players(self) -> List[Player]:
         """
         Charge tous les joueurs depuis le fichier JSON.
 
@@ -54,17 +49,17 @@ class PlayerController:
         ------
         List[Player] : Liste éventuellement vide de joueurs.
         """
-        if not os.path.exists(self.filepath):
+        if not os.path.exists(self.file_path):
             return []  # Premier lancement : aucun joueur.
 
         try:
-            return Player.load_all_players(self.filepath)
+            return Player.load_all_players(self.file_path)
         except (json.JSONDecodeError, ValueError) as e:
             # Fichier corrompu ou données mal formées.
-            print(f"❌ Impossible de lire {self.filepath} : {e}")
+            print(f"❌ Impossible de lire {self.file_path} : {e}")
             return []
 
-    def save_all_players(self, players: List[Player]) -> None:
+    def save_players(self, players: List[Player]) -> None:
         """
         Écrit la liste complète des joueurs dans le fichier JSON.
 
@@ -76,45 +71,86 @@ class PlayerController:
         self._ensure_file_exists()
 
         try:
-            with open(self.filepath, "w", encoding="utf-8") as f:
+            with open(self.file_path, "w", encoding="utf-8") as f:
                 json.dump([p.to_dict() for p in players], f, indent=2, ensure_ascii=False)  # type: ignore
         except IOError as e:
             print(f"❌ Erreur de sauvegarde : {e}")
 
     def add_new_player(
-        self,
-        last_name: str,
-        first_name: str,
-        birthdate: str,
-        national_id: str,
-    ) -> bool:
+            self, last_name: str, first_name: str, birthdate: str, national_id: str
+    ) -> Tuple[bool, Optional[str]]:
         """
-        Ajoute un joueur si l’ID est valide et inexistant. Renvoie True si succès.
+        Tente d’ajouter un nouveau joueur avec validations.
+
+        Retour :
+            Tuple(bool, str) :
+                - True + None si succès
+                - False + message d’erreur sinon
         """
         if not self._is_valid_id(national_id):
-            return False  # Format invalide.
+            return False, "Format d'identifiant invalide (2 lettres + 5 chiffres)."
+
+        if not self._is_valid_birthdate(birthdate):
+            return False, "Format de date invalide. Utilisez YYYY-MM-DD."
+
+        if not last_name or not first_name:
+            return False, "Le nom et le prénom sont obligatoires."
 
         try:
             players = self.load_all_players()
 
-            # Vérifier l’ID unique
             if any(p.national_id == national_id for p in players):
-                return False
+                return False, "Cet identifiant est déjà utilisé."
 
             new_player = Player(last_name, first_name, birthdate, national_id)
             players.append(new_player)
             self.save_all_players(players)
-            return True
-        except Exception as e:
-            print(f"❌ Erreur lors de l’ajout du joueur : {e}")
-            return False
+            return True, None
+        except (IOError, JSONDecodeError, ValueError) as e:
+            return False, f"Erreur système lors de l'ajout du joueur : {e}"
 
-    def get_player_by_id(self, player_id: str) -> Optional[Player]:
+    def handle_add_new_player(self) -> None:
         """
-        Retourne un joueur correspondant à l’ID, ou None si inexistant.
+        Gère le processus d’ajout d’un nouveau joueur avec validation et confirmation.
         """
-        players = self.load_all_players()
-        return next((p for p in players if p.national_id == player_id), None)
+        result = player_views.prompt_new_player_inputs_with_review()
+
+        if result is None:
+            player_views.display_error_message("Ajout annulé.")
+            return
+
+        last_name, first_name, birthdate, national_id = result
+
+        success, message = self.add_new_player(last_name, first_name, birthdate, national_id)
+
+        if success:
+            player_views.confirm_player_added()
+        else:
+            player_views.display_error_message(message)
+
+    def get_player_by_id(self, national_id: str) -> Optional[Player]:
+        """
+        Récupère un joueur à partir de son identifiant national.
+
+        Paramètre :
+            national_id (str) : L’identifiant unique du joueur.
+
+        Retour :
+            Player | None : L'objet joueur correspondant, ou None si introuvable.
+        """
+        try:
+            players = self.load_players()
+            for p in players:
+                if isinstance(p, Player):
+                    if p.national_id == national_id:
+                        return p
+                elif isinstance(p, dict):
+                    if p.get("national_id") == national_id:
+                        return Player.from_dict(p)
+            return None
+        except Exception as e:
+            player_views.display_error_message(f"Erreur de lecture des joueurs : {e}")
+            return None
 
     @staticmethod
     def sort_players_by_name(players: List[Player], reverse: bool = False) -> List[Player]:
@@ -128,21 +164,21 @@ class PlayerController:
         return sorted(players, key=lambda p: (p.last_name.lower(), p.first_name.lower()), reverse=reverse)
 
     @staticmethod
-    def sort_players_by_ranking( players: List[Player]) -> List[Player]:
+    def sort_players_by_ranking(players: List[Player]) -> List[Player]:
         """
         Trie par score total décroissant (méthode get_total_score()).
         """
         return sorted(players, key=lambda p: p.get_total_score(), reverse=True)
 
     @staticmethod
-    def find_players_by_id( players: List[Player], query: str) -> List[Player]:
+    def find_players_by_id(players: List[Player], query: str) -> List[Player]:
         """
         Filtre les joueurs dont l’ID contient la sous-chaîne « query » (insensible à la casse).
         """
         return [p for p in players if query.lower() in p.national_id.lower()]
 
     @staticmethod
-    def find_players_by_name( players: List[Player], query: str) -> List[Player]:
+    def find_players_by_name(players: List[Player], query: str) -> List[Player]:
         """
         Filtre les joueurs dont le NOM de famille contient « query ».
         """
@@ -189,13 +225,13 @@ class PlayerController:
             return
         try:
             player.record_match(match_name, result)
-            players = self.load_all_players()
+            players = self.load_players()
             for i, p in enumerate(players):
                 if p.national_id == player.national_id:
                     players[i] = player
                     break
-            self.save_all_players(players)
-            print("✅ Match enregistré avec succès.")
+            self.save_players(players)
+            console.print("✅ Match enregistré avec succès.")
         except ValueError as e:
             player_views.display_error_message(str(e))
         except Exception as e:
@@ -206,7 +242,7 @@ class PlayerController:
             subchoice = player_views.show_player_main_menu()
 
             if subchoice == "1":
-                players = self.load_all_players()
+                players = self.load_players()
                 player_views.display_all_players(players)
 
             elif subchoice == "2":
@@ -222,18 +258,13 @@ class PlayerController:
                 if not player:
                     player_views.display_error_message("Aucun joueur trouvé avec cet ID.")
                 else:
-                    player_views.display_player_identity(player)
-                    action_result = self.handle_actions_on_player_page_menu_menu(player)
+                    player_views.display_full_player_profile(player)
+                    action_result = self.handle_actions_on_player_page_menu(player)
                     if action_result == "return_to_main":
                         return
 
             elif subchoice == "4":
-                last_name, first_name, birthdate, national_id = player_views.prompt_new_player()
-                success = self.add_new_player(last_name, first_name, birthdate, national_id)
-                if success:
-                    player_views.confirm_player_added()
-                else:
-                    player_views.display_error_message("Format de l’identifiant invalide ou ID déjà existant.")
+                self.handle_add_new_player()
 
             elif subchoice == "5":
                 break
@@ -241,33 +272,102 @@ class PlayerController:
             else:
                 player_views.display_error_message("Option invalide.")
 
-    @staticmethod
-    def handle_actions_on_player_page_menu_menu(player: Player) -> str:
+    # Méthode pour modifier le bio d'un joueur
+    def update_player_info(self, player: Player) -> None:
+        """
+        Permet à l’utilisateur de modifier une information du joueur avec confirmation.
+        """
         while True:
+            field_to_edit = player_views.prompt_edit_player_field_choice()
+            if field_to_edit == "Annuler":
+                return
+
+            new_value = player_views.prompt_field_with_validation(
+                f"{field_to_edit} :", VALIDATION_MAP[field_to_edit]
+            )
+
+            if not new_value:
+                player_views.display_error_message("Aucune valeur saisie.")
+                continue
+
+            confirmation = player_views.confirm_field_update(field_to_edit, new_value)
+            if confirmation == "Annuler":
+                return
+            elif confirmation == "Réessayer":
+                continue
+
+            # Validation-specific logic for national_id uniqueness
+            if field_to_edit == "Identifiant national":
+                all_players = self.load_players()
+                if any(p.national_id == new_value and p != player for p in all_players):
+                    player_views.display_error_message("Cet identifiant est déjà utilisé par un autre joueur.")
+                    continue
+                player.set_national_id(new_value)
+
+            elif field_to_edit == "Nom de famille":
+                player.set_last_name(new_value)
+
+            elif field_to_edit == "Prénom":
+                player.set_first_name(new_value)
+
+            elif field_to_edit == "Date de naissance":
+                player.set_birthdate(new_value)
+
+            # Save player changes
+            self._save_player(player)
+            player_views.confirm_player_updated()
+            player_views.display_full_player_profile(player)
+            return
+
+    def _save_player(self, updated_player: Player) -> None:
+        """
+        Helper function to save updates to a single player
+        """
+        players = self.load_players()
+        for idx, p in enumerate(players):
+            if p.national_id == updated_player.national_id or p is updated_player:
+                players[idx] = updated_player
+                break
+        self.save_players(players)
+
+    def handle_actions_on_player_page_menu(self, player: Player, max_loops: int = 10) -> str:
+        """
+        Gère les actions sur la fiche d’un joueur. Retourne une chaîne selon l’action choisie.
+
+        Paramètres :
+            player (Player): Le joueur concerné.
+            max_loops (int): Nombre maximal d’itérations pour éviter une boucle infinie
+            en cas d’erreur (par défaut : 10).
+
+        Retour :
+            str : "return_to_players", "return_to_main", ou "" si aucune sortie claire.
+        """
+        loop_count = 0
+
+        while loop_count < max_loops:
             action = player_views.display_user_action_menu_for_player_page(player)
 
-            if action == "1":
-                print("🛠️ Fonction de modification à implémenter.")
+            if action == ACTION_UPDATE_INFO:
+                self.update_player_info(player)
 
-            elif action == "2":
-                try:
-                    stats = player.get_stats_summary()
-                    player_views.display_stats_summary(stats)
-                except Exception as e:
-                    player_views.display_error_message(f"Erreur lors de l'affichage des stats : {e}")
-
-            elif action == "3":
+            elif action == ACTION_BACK_TO_PLAYERS:
                 return "return_to_players"
 
-            elif action == "5":
+            elif action == ACTION_BACK_TO_MAIN:
                 return "return_to_main"
 
             else:
                 player_views.display_error_message("Option invalide.")
-    
+
+            loop_count += 1
+
+        # Si la boucle dépasse le maximum, afficher une erreur et sortir.
+        player_views.display_error_message("Trop de tentatives invalides. Retour au menu précédent.")
+        return "return_to_main"
+
     def handle_user_sort_filter_menu(self) -> str:
         while True:
-            players = self.load_all_players()
+            players = self.load_players()
             choice = player_views.show_player_sort_filter_menu()
 
             if choice == "1":
@@ -296,8 +396,8 @@ class PlayerController:
                 player_id = player_views.prompt_player_national_id()
                 player = self.get_player_by_id(player_id)
                 if player:
-                    player_views.display_player_identity(player)
-                    result = self.handle_actions_on_player_page_menu_menu(player)
+                    player_views.display_full_player_profile(player)
+                    result = self.handle_actions_on_player_page_menu(player)
                     if result == "return_to_main":
                         return "return_to_main"
                     elif result == "return_to_players":

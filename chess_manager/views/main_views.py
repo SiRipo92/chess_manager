@@ -3,6 +3,7 @@ import questionary
 
 console = Console()
 
+
 def display_main_menu() -> str:
     """
     Affiche le menu principal de l'application en stylisant avec Rich et Questionary.
