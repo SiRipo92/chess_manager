@@ -1,5 +1,5 @@
 from typing import Tuple, Dict
-from chess_manager.models.player import Player
+from chess_manager.models.player_models import Player
 
 
 class Match:

@@ -9,7 +9,7 @@ def main() -> None:
     """
     print("\n\u265F\ufe0f Bienvenue dans le Chess Tournament Manager (v0.1)")
     os.makedirs("data", exist_ok=True)
-    player_controller = PlayerController(filepath="data/players.json")
+    player_controller = PlayerController(file_path="data/players.json")
 
     handle_main_menu(player_controller)
 

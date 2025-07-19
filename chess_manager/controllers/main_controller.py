@@ -1,4 +1,4 @@
-from chess_manager.views.main_views import display_main_menu
+from chess_manager.views import main_views
 from chess_manager.views import player_views
 from chess_manager.controllers.player_controller import PlayerController
 
@@ -11,7 +11,7 @@ def handle_main_menu(controller: PlayerController) -> None:
         controller (PlayerController) : Contrôleur principal pour la gestion des joueurs.
     """
     while True:
-        choice = display_main_menu()
+        choice = main_views.display_main_menu()
 
         if choice == "1":
             controller.manage_players()

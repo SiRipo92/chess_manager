@@ -1,3 +1,0 @@
-
-exclude = .venv,venv,__pycache__,migrations
-max-line-length = 119
