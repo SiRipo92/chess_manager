@@ -1,4 +1,5 @@
 from chess_manager.utils.player_validators import is_valid_birthdate, is_valid_id, is_valid_name
+from chess_manager.constants.navigation.labels import OPTION_GO_BACK
 
 FIELD_LAST_NAME = "Nom de famille"
 FIELD_FIRST_NAME = "Prénom"
@@ -27,3 +28,6 @@ VALIDATION_MAP = {
     FIELD_BIRTHDATE: is_valid_birthdate,
     FIELD_NATIONAL_ID: is_valid_id,
 }
+
+# Menu used to choose which field to modify
+PLAYER_BIO_MODIFICATION_CHOICES = FIELD_CHOICES + OPTION_GO_BACK

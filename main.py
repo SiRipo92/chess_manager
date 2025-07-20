@@ -1,18 +1,19 @@
-import os
-from chess_manager.controllers.player_controller import PlayerController
 from chess_manager.controllers.main_controller import handle_main_menu
+from chess_manager.controllers.player_controller import PlayerController
+from chess_manager.controllers.tournament_repository_controller import load_players_for_tournament_group
 
 
-def main() -> None:
-    """
-    Point d'entrée principal de l'application. Initialise le contrôleur principal et démarre le menu.
-    """
-    print("\n\u265F\ufe0f Bienvenue dans le Chess Tournament Manager (v0.1)")
-    os.makedirs("data", exist_ok=True)
-    player_controller = PlayerController(file_path="data/players/players.json")
+def main():
+    result = load_players_for_tournament_group()
+    if result is None:
+        # User selected "❌ QUITTER LE PROGRAMME" explicitly
+        print("\n👋 Vous avez choisi de quitter le programme. Goodbye :) \n")
+        return  # Exit cleanly
 
-    handle_main_menu(player_controller)
+    city, filepath, players = result
 
+    controller = PlayerController(players, filepath, city)
+    handle_main_menu(controller)
 
 if __name__ == "__main__":
     main()

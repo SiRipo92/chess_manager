@@ -1,37 +1,25 @@
-# =============================
-# Player Views Structure Map
-# =============================
-#
-# 1. Input Prompts
-#    - prompt_new_player_inputs_with_review
-#    - prompt_field_with_validation
-#    - prompt_edit_player_field_choice,
-#    - prompt_player_bio_update_choice
-#    - prompt_player_national_id, prompt_match_result
-#    - prompt_player_name_filter
-#
-# 2. Confirmations
-#    - confirm_player_added
-#    - confirm_field_update
-#    - confirm_player_updated
-#
-# 3. Display Functions
-#    - display_error_message, display_all_players
-#    - display_player_brief_info,
-#    - display_full_player_profile
-#    - display_stats_summary
-#
-# 4. Menu Navigation
-#    - show_player_main_menu,
-#    - show_player_sort_filter_menu
-#    - display_user_action_menu_for_player_page
-
 from typing import List, Tuple, Optional, cast
 import questionary
 from rich.console import Console
 from rich.table import Table
 from chess_manager.models.player_models import Player
 from chess_manager.constants.player_fields import FIELD_CHOICES, FIELD_LABELS, VALIDATION_MAP
+from chess_manager.constants.navigation.menu_keys import CONFIRM_NEW_PLAYER_MENU, ADD_NEW_PLAYER_MENU
+from chess_manager.constants.navigation.labels import (
+    OPTION_VALIDATE_NEW_PLAYER,
+    OPTION_MODIFY_PLAYER_FIELD,
+    OPTION_CANCEL_NEW_PLAYER,
+    OPTION_YES,
+    OPTION_NO
+)
+from chess_manager.utils.navigation.menu_builder import display_menu_from_key, display_contextual_menu
+from chess_manager.constants.navigation.menu_keys import (
+    PLAYER_MANAGEMENT_MENU,
+    PLAYER_SORT_FILTER_MENU,
+    PLAYER_MODIFICATION_VALIDATION_MENU,
+    PLAYER_FILE_RETURN_MENU,
+    YES_NO_MENU
+)
 
 console = Console()
 
@@ -48,7 +36,6 @@ def prompt_new_player_inputs_with_review() -> Optional[Tuple[str, str, str, str]
     Gère la saisie et correction d’un joueur avec résumé et validation.
     """
     field_values: dict[str, str] = {}
-
     # Collecte les données pour chaque champ requis
     for label in PLAYER_CREATION_KEYS:
         suffix = " (YYYY-MM-DD)" if "naissance" in label.lower() else ""
@@ -57,7 +44,6 @@ def prompt_new_player_inputs_with_review() -> Optional[Tuple[str, str, str, str]
             VALIDATION_MAP[label]
         )
         field_values[label] = cast(str, value)
-
     # Affiche un résumé des données et permet la modification ou confirmation
     while True:
         # Création temporaire du joueur pour affichage du résumé
@@ -68,20 +54,16 @@ def prompt_new_player_inputs_with_review() -> Optional[Tuple[str, str, str, str]
         display_player_brief_info(temp_player)
 
         # Choix de l'utilisateur : enregistrer, modifier un champ, ou annuler
-        action = questionary.select(
-            "Souhaitez-vous enregistrer ce joueur ?",
-            choices=["Confirmer", "Modifier un champ", "Annuler"]
-        ).ask()
-
-        if action == "Confirmer":
-            # Renvoie les valeurs sous forme de tuple
-            return tuple(field_values[label] for label in PLAYER_CREATION_KEYS)  # type: ignore
-        elif action == "Annuler":
+        action = display_menu_from_key(menu_key=CONFIRM_NEW_PLAYER_MENU)
+        if action == OPTION_VALIDATE_NEW_PLAYER:
+            return tuple(field_values[label] for label in FIELD_CHOICES)  # type: ignore
+        elif action == OPTION_CANCEL_NEW_PLAYER:
             return None
-        elif action == "Modifier un champ":
+        elif action == OPTION_MODIFY_PLAYER_FIELD:
             field_to_edit = prompt_edit_player_field_choice()
-            if field_to_edit == "Annuler":
+            if field_to_edit == OPTION_CANCEL_NEW_PLAYER:
                 continue
+
             suffix = " (YYYY-MM-DD)" if "naissance" in field_to_edit.lower() else ""
             new_value = prompt_field_with_validation(
                 f"{field_to_edit}{suffix} :",
@@ -124,21 +106,15 @@ def prompt_edit_player_field_choice() -> str:
 
 def prompt_player_bio_update_choice(player: Player) -> str:
     """
-    Affiche les champs modifiables pour un joueur.
+    Affiche les champs modifiables pour un joueur, en utilisant les constantes FIELD_CHOICES.
     """
-    display_player_brief_info(player)  # 👈 Preview before asking
+    display_player_brief_info(player)
     console.print(
-        "\n[blue]Modifier les informations de {} {}[blue]"
-        .format(player.first_name, player.last_name))
+        f"\n[blue]Modifier les informations de {player.first_name} {player.last_name}[/blue]"
+    )
     return questionary.select(
         "Quel champ souhaitez-vous modifier ?",
-        choices=[
-            "Nom de famille",
-            "Prénom",
-            "Date de naissance",
-            "Identifiant national",
-            "Annuler"
-        ]
+        choices=FIELD_CHOICES + ["Annuler"]
     ).ask()
 
 
@@ -192,11 +168,13 @@ def confirm_player_added():
 def confirm_field_update(field_name: str, new_value: str) -> str:
     """
     Demande confirmation avant de sauvegarder une modification.
+    Utilise le menu contextuel défini dans les constantes.
     """
-    return questionary.select(
-        f"[{field_name}] sera mis à jour avec : {new_value}. Confirmer ?",
-        choices=["Confirmer", "Réessayer", "Annuler"]
-    ).ask()
+    message = f"[{field_name}] sera mis à jour avec : {new_value}. Confirmer ?"
+    return display_menu_from_key(
+        menu_key=PLAYER_MODIFICATION_VALIDATION_MENU,
+        custom_title=message
+    )
 
 
 def confirm_player_updated() -> None:
@@ -319,78 +297,46 @@ def display_full_player_profile(player: Player):
 # =========================
 
 
-def show_player_main_menu() -> str:
+def display_player_management_menu() -> str | None:
     """
-    Affiche le menu principal de la gestion des joueurs et attend le choix de l'utilisateur.
-
-    Gestion des erreurs :
-        Intercepte EOFError ou KeyboardInterrupt pour retourner à un état sûr.
+    Affiche dynamiquement le menu principal de gestion des joueurs.
     """
-    # Affiche un menu avec 5 options et retourne le chiffre sélectionné (sous forme de str)
-    try:
-        return questionary.select(
-            "---- MENU DES JOUEURS ----",
-            choices=[
-                "1. VOIR LES JOUEURS",
-                "2. FILTRER / TRIER LES JOUEURS",
-                "3. VOIR FICHE D'UN JOUEUR",
-                "4. AJOUTER UN NOUVEAU JOUEUR",
-                "5. RETOUR AU MENU PRINCIPAL"
-            ]
-        ).ask()[0]  # Récupère uniquement le numéro de l'option (ex: '1')
-    except (EOFError, KeyboardInterrupt):
-        # Gestion propre en cas d'interruption utilisateur
-        console.print("\n⛔ [red]Entrée interrompue. Retour au menu principal.[/red]")
-        return "7"
+    return display_menu_from_key(menu_key=PLAYER_MANAGEMENT_MENU)
 
 
 def show_player_sort_filter_menu() -> str:
     """
-    Affiche le menu pour trier ou filtrer les joueurs selon divers critères.
+    Affiche dynamiquement le menu de tri et de filtrage des joueurs.
+    """
+    return display_menu_from_key(menu_key=PLAYER_SORT_FILTER_MENU)
+
+
+def display_player_file_menu(player: Player) -> str | None:
+    """
+    Affiche le profil complet d’un joueur et propose à l'utilisateur
+    de modifier ses informations ou de choisir où retourner ensuite.
 
     Retour :
-        str : Choix de l’utilisateur.
+        - Le choix final de menu sous forme de clé (menu_key).
+        - Ou une action déclenchée (modification).
     """
-    try:
-        # Menu avec différentes options de tri et recherche sur les joueurs
-        return questionary.select(
-            "-- MENU DE FILTRAGE OU TRI DES JOUEURS  --",
-            choices=[
-                "1. TRIER PAR NOM (A-Z)",
-                "2. TRIER PAR NOM (Z-A)",
-                "3. TRIER PAR CLASSEMENT",
-                "4. RECHERCHER UN JOUEUR PAR ID (PARTIEL)",
-                "5. RECHERCHER UN JOUEUR PAR NOM",
-                "6. VOIR LE FICHE D'UN JOUEUR",
-                "7. RETOUR AU MENU DE GESTION DES JOUEURS",
-                "8. QUITTER LE PROGRAMME"
-            ]
-        ).ask()[0]  # Retourne l'identifiant numérique du choix sélectionné
-    except (EOFError, KeyboardInterrupt):
-        console.print("\n⛔ [red]Entrée interrompue. Retour au menu principal.[/red]")
-        return "8"
 
+    # 1. Affiche le titre et la fiche complète du joueur
+    console.print("\n[bold cyan]--- FICHE JOUEUR ---[/bold cyan]\n")
+    display_full_player_profile(player)
 
-def display_user_action_menu_for_player_page(player: Player) -> str:
-    """
-    Affiche les actions possibles sur un joueur (fiche individuelle).
+    # 2. Demande à l'utilisateur s’il souhaite modifier ce joueur
+    console.print("\n[blue]Souhaitez-vous modifier ce joueur ?[/blue]\n")
+    action = display_menu_from_key(menu_key=YES_NO_MENU)
 
-    Paramètre :
-        player (Player) : Le joueur actuellement sélectionné.
+    if action == OPTION_YES:
+        # This menu should have the player_fields to edit
+        # With a modification escape sequence menu
+        return prompt_player_bio_update_choice(player)
 
-    Retour :
-        str : Choix de l’utilisateur.
-    """
-    try:
-        # Affiche un menu contextuel avec 3 actions sur le joueur donné
-        return questionary.select(
-            f"---- FICHE JOUEUR : {player.first_name} {player.last_name} (ID: {player.national_id}) ----",
-            choices=[
-                "1. MODIFIER LES INFO D'UN JOUEUR",
-                "2. RETOUR AU MENU DES JOUEURS",
-                "3. RETOUR AU MENU PRINCIPAL"
-            ]
-        ).ask()[0]
-    except (EOFError, KeyboardInterrupt):
-        console.print("\n⛔ [red]Entrée interrompue.[/red]")
-        return "2"
+    elif action == OPTION_NO:
+        # 3. Si NON : proposer où retourner ensuite
+        console.print("\n[blue]Où souhaitez-vous retourner dans le programme ?[/blue]\n")
+        next_action = display_menu_from_key(menu_key=PLAYER_FILE_RETURN_MENU)
+
+        return next_action

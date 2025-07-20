@@ -1,37 +1,3 @@
-# ==============================
-# Player Controller Structure Map
-# ==============================
-#
-# 1. Initialisation & Persistence
-#    - __init__
-#    - _ensure_file_exists
-#    - load_players
-#    - save_players
-#
-# 2. Player Creation
-#    - add_new_player
-#    - handle_add_new_player
-#
-# 3. Player Retrieval
-#    - get_player_by_id
-#
-# 4. Sorting & Searching
-#    - sort_players_by_name
-#    - sort_players_by_ranking,
-#    - find_player_by_id
-#    - find_player_by_name
-#
-# 5. Statistics & Match History
-#    - get_player_statistics
-#    - record_match_for_player
-#
-# 6. Player Management
-#    - manage_players
-#    - update_player_info
-#    - _save_player
-#    - handle_actions_on_player_page_menu
-#    - handle_user_sort_filter_menu
-
 import json
 from json import JSONDecodeError
 import os
@@ -41,13 +7,27 @@ from typing import List, Optional, Tuple
 from chess_manager.models.player_models import Player
 from chess_manager.constants.player_fields import VALIDATION_MAP
 from chess_manager.views import player_views
+from chess_manager.constants.player_repository import BASE_PLAYER_DIRECTORY, PLAYER_FILENAME
+from chess_manager.constants.navigation.labels import (
+    OPTION_SHOW_PLAYERS,
+    OPTION_SORT_PLAYERS,
+    OPTION_SHOW_PLAYER_FILE,
+    OPTION_ADD_NEW_PLAYER,
+    OPTION_GO_BACK,
+    OPTION_QUIT_PROGRAM
+)
 
 console = Console()
 
-# CONSTANTS
-ACTION_UPDATE_INFO = "1"
-ACTION_BACK_TO_PLAYERS = "2"
-ACTION_BACK_TO_MAIN = "3"
+
+def get_player_filepath_for_city(city: str) -> str:
+    """
+    Retourne le chemin complet du fichier players.json pour une ville donnée.
+        Exemple : city='Nanterre' ➜ 'data/players/Nanterre/players.json'
+    """
+    # Function needed to set up Player File storage by Location
+    sanitized_city = city.strip().title()
+    return os.path.join(str(BASE_PLAYER_DIRECTORY), sanitized_city, str(PLAYER_FILENAME))
 
 
 class PlayerController:
@@ -59,17 +39,20 @@ class PlayerController:
     # 1. Initialisation & Persistence
     # ===============================
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, players: list[Player], filepath: str, city: str) -> None:
         """
-        Initialise le contrôleur avec le chemin du fichier JSON des joueurs.
+        Initialise le contrôleur des joueurs avec un sous-dossier de localisation.
         """
-        self.file_path = file_path  # 🔁 cette ligne est essentielle
+        self.players = players
+        self.file_path = filepath
+        self.city = city
         self._ensure_file_exists()
 
     def _ensure_file_exists(self) -> None:
         """
         Crée un fichier JSON vide (liste) s’il n’existe pas encore.
         """
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
         if not os.path.exists(self.file_path):
             try:
                 with open(self.file_path, "w", encoding="utf-8") as f:
@@ -80,14 +63,11 @@ class PlayerController:
     def load_players(self) -> List[Player]:
         """
         Charge tous les joueurs depuis le fichier JSON.
-
         Retour
-        ------
-        List[Player] : Liste éventuellement vide de joueurs.
+        ------ List[Player] : Liste éventuellement vide de joueurs.
         """
         if not os.path.exists(self.file_path):
             return []  # Premier lancement : aucun joueur.
-
         try:
             return Player.load_all_players(self.file_path)
         except (json.JSONDecodeError, ValueError) as e:
@@ -100,9 +80,8 @@ class PlayerController:
         Écrit la liste complète des joueurs dans le fichier JSON.
 
         Paramètre
-        ---------
-        players : List[Player]
-            Liste à persister.
+        --------- players : List[Player]
+        Liste à persister.
         """
         self._ensure_file_exists()
 
@@ -116,16 +95,13 @@ class PlayerController:
     # 2. Player Creation
     # ===================
 
-    def add_new_player(
-            self, last_name: str, first_name: str, birthdate: str, national_id: str
-    ) -> Tuple[bool, Optional[str]]:
+    def add_new_player(self, last_name: str, first_name: str, birthdate: str, national_id: str
+            ) -> Tuple[bool, Optional[str]]:
         """
         Tente d’ajouter un nouveau joueur avec validations.
-
-        Retour :
-            Tuple(bool, str) :
-                - True + None si succès
-                - False + message d’erreur sinon
+        Retour : Tuple(bool, str) :
+            - True + None si succès
+            - False + message d’erreur sinon
         """
         field_inputs = {
             "Nom de famille": last_name,
@@ -160,15 +136,11 @@ class PlayerController:
         Gère le processus d’ajout d’un nouveau joueur avec validation et confirmation.
         """
         result = player_views.prompt_new_player_inputs_with_review()
-
         if result is None:
             player_views.display_error_message("Ajout annulé.")
             return
-
         last_name, first_name, birthdate, national_id = result
-
         success, message = self.add_new_player(last_name, first_name, birthdate, national_id)
-
         if success:
             player_views.confirm_player_added()
         else:
@@ -300,20 +272,20 @@ class PlayerController:
     # ======================
     def manage_players(self):
         while True:
-            subchoice = player_views.show_player_main_menu()
+            action = player_views.display_player_management_menu()
 
-            if subchoice == "1":
+            if action == "1":
                 players = self.load_players()
                 player_views.display_all_players(players)
 
-            elif subchoice == "2":
+            elif action == "2":
                 result = self.handle_user_sort_filter_menu()
                 if result == "return_to_main":
                     return
                 elif result == "return_to_players":
                     continue
 
-            elif subchoice == "3":
+            elif action == "3":
                 player_id = player_views.prompt_player_national_id()
                 player = self.get_player_by_id(player_id)
                 if not player:
@@ -324,10 +296,10 @@ class PlayerController:
                     if action_result == "return_to_main":
                         return
 
-            elif subchoice == "4":
+            elif action == "4":
                 self.handle_add_new_player()
 
-            elif subchoice == "5":
+            elif action == "5":
                 break
 
             else:
