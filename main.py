@@ -1,4 +1,4 @@
-from chess_manager.controllers.main_controller import handle_main_menu
+from chess_manager.controllers.main_controller import handle_club_menu
 from chess_manager.controllers.player_controller import PlayerController
 from chess_manager.controllers.tournament_repository_controller import load_players_for_tournament_group
 
@@ -13,7 +13,7 @@ def main():
     city, filepath, players = result
 
     controller = PlayerController(players, filepath, city)
-    handle_main_menu(controller)
+    handle_club_menu(controller)
 
 if __name__ == "__main__":
     main()

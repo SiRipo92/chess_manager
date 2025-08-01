@@ -3,9 +3,6 @@ Constantes de navigation réutilisables dans tous les menus CLI.
 Chaque option est décrite par une chaîne de caractères lisible, incluant des emojis pour l'UX.
 """
 
-from chess_manager.constants.player_fields import FIELD_LABELS
-
-
 # ─────────────────────────────────────────────────────────
 # INSTRUCTIONS GÉNÉRALES
 # ─────────────────────────────────────────────────────────
@@ -14,6 +11,7 @@ from chess_manager.constants.player_fields import FIELD_LABELS
 INSTRUCTION_UTILISER_FLECHES = "Utilisez les flèches ↑ ↓ et [bold]Entrée[/bold] pour faire votre choix."
 
 USER_CANCEL_MESSAGE = "⛔ Sélection annulée."
+
 # ─────────────────────────────────────────────────────────
 # ÉTIQUETTES GÉNÉRALES
 # ─────────────────────────────────────────────────────────
@@ -24,27 +22,32 @@ OPTION_NO = "❌ Non"
 CONFIRM_CHOICE = "✅ Confirmer"
 CANCEL_CHOICE = "❌ Annuler"
 
-OPTION_QUIT_PROGRAM = "  ❌   Quitter le programme"
-OPTION_GO_BACK = "  🔙   Retour à l'étape précédente"
-OPTION_RETURN_TO_STARTING_MENU = "  🏠  Retour au menu de démarrage"
-OPTION_RETURN_TO_CLUB_MENU = "  🏠   Retour au menu principal"
-OPTION_RETURN_TO_PLAYERS_MENU = "  👥  Retour à la gestion des joueurs"
-OPTION_RETURN_TO_PLAYER_SORT_FILTER_MENU = "  🔍   Retour au menu de tri/filtrage"
-OPTION_RETURN_TO_PLAYER_FILE = "  🔁   Revoir la fiche du joueur"
+
+# ─────────────────────────────────────────────────────────
+# CHOIX DE RETOUR AUX MENUS PRÉCÉDENTS
+# ─────────────────────────────────────────────────────────
+
+OPTION_RETURN_TO_CLUB_MENU = "↩ Retour de la club menu"
+OPTION_RETURN_TO_PLAYERS_MENU = "👥 Retour à la gestion des joueurs"
+OPTION_RETURN_TO_STARTING_MENU = "🏠 Retour au menu de démarrage"
+OPTION_GO_BACK = "🔙 Retour à l’étape précédente"
+OPTION_RETURN_TO_PLAYER_SORT_FILTER_MENU = "🔍 Retour au menu de tri/filtrage"
+OPTION_RETURN_TO_PLAYER_FILE = "↩️ Revoir la fiche du joueur"
+OPTION_QUIT_PROGRAM = "❌ Quitter le programme"
 
 # ─────────────────────────────────────────────────────────
 # MENU DE DÉMARRAGE
 # ─────────────────────────────────────────────────────────
 
-OPTION_CREATE_NEW_PLAYERS_FILE = "  🆕   Créer un nouveau groupe de joueurs"
-OPTION_IMPORT_FILE = "  📁   Importer un fichier 'players.json'"
+OPTION_CREATE_NEW_PLAYERS_FILE = "🆕 Créer un nouveau groupe de joueurs"
+OPTION_IMPORT_FILE = "📁 Importer un fichier 'players.json'"
 
 # ─────────────────────────────────────────────────────────
 # MENU CLUB
 # ─────────────────────────────────────────────────────────
 
-OPTION_MANAGE_PLAYERS = "  👥  Gérer les joueurs"
-OPTION_MANAGE_TOURNAMENTS = "  🏆   Gérer les tournois"
+OPTION_MANAGE_PLAYERS = "👥 Gérer les joueurs"
+OPTION_MANAGE_TOURNAMENTS = "🏆 Gérer les tournois"
 
 # ─────────────────────────────────────────────────────────
 # MENU JOUEURS
@@ -70,6 +73,14 @@ OPTION_CANCEL_NEW_PLAYER = "❌ Annuler"
 OPTION_VALIDATE_PLAYER_MODIFICATION = "✅ Confirmer"
 OPTION_TRY_AGAIN = "🔁 Réessayer"
 OPTION_CANCEL_PLAYER_MODIFICATION = "❌ Annuler"
+
+# ─────────────────────────────────────────────────────────
+# CHAMPS MODIFIABLE D'UN JOUEUR
+# ─────────────────────────────────────────────────────────
+FIELD_ID = "Identifiant national"
+FIELD_LAST_NAME = "Nom de famille"
+FIELD_FIRST_NAME = "Prénom"
+FIELD_BIRTHDATE = "Date de naissance"
 
 # ─────────────────────────────────────────────────────────
 # MENU TRI / FILTRAGE JOUEURS
@@ -121,6 +132,11 @@ PLAYER_FILE_ESCAPE_SEQUENCE = [
     OPTION_RETURN_TO_CLUB_MENU,
     OPTION_RETURN_TO_STARTING_MENU,
     OPTION_QUIT_PROGRAM
+]
+
+SORT_PLAYERS_ESCAPE_SEQUENCE_MENU = [
+    OPTION_RETURN_TO_PLAYERS_MENU,
+    OPTION_QUIT_PROGRAM,
 ]
 
 # ─────────────────────────────────────────────────────────

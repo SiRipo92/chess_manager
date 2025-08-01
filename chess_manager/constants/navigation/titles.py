@@ -17,6 +17,12 @@ STARTING_MENU_TITLE = (
     "-" * 40 + "[/bold cyan]"
 )
 
+STARTING_TITLE_FOR_EXISTING_PLAYER_DATA = (
+    "[bold cyan]\n" + "-" * 40 +
+    "\nSÉLECTION DU GROUPE DE JOUEURS\n" +
+    "-" * 40 + "[/bold cyan]"
+)
+
 # Affichage :
 # ----------------------------------------
 # MENU DE GESTION DE JOUEURS
@@ -37,6 +43,7 @@ TOURNAMENT_MANAGEMENT_MENU_TITLE = (
     "-" * 40 + "[/bold cyan]"
 )
 
+
 # Affichage :
 # ----------------------------------------
 # MENU DE TRI / FILTRAGE DES JOUEURS
@@ -55,6 +62,10 @@ PLAYER_FILE_TITLE = (
     "[bold cyan]\n" + "-" * 40 +
     "\nFICHE DU JOUEUR\n" +
     "-" * 40 + "[/bold cyan]"
+)
+
+PLAYER_MOD_YES_NO_TITLE = (
+    "[bold] Veuillez-vous modifier ce joueur ?[/bold]"
 )
 
 # Affichage :
@@ -111,6 +122,7 @@ CLUB_MANAGEMENT_MENU_TEMPLATE_SHORT = "Menu club à {city}"
 
 MENU_TITLES = {
     "starting_menu": STARTING_MENU_TITLE,
+    "player_file_section_menus": STARTING_TITLE_FOR_EXISTING_PLAYER_DATA,
     "player_management_menu": PLAYER_MANAGEMENT_MENU_TITLE,
     "tournament_management_menu": TOURNAMENT_MANAGEMENT_MENU_TITLE,
     "player_sort_filter_menu": PLAYER_SORT_FILTER_MENU_TITLE,

@@ -1,18 +1,9 @@
-import questionary
 from questionary import Choice, select
 from typing import List
 from rich.console import Console
-from chess_manager.constants.tournament_repository import (
-    OPTION_ADD_PLAYERS,
-    OPTION_IMPORT_PLAYERS,
-    OPTION_QUIT
-)
-from chess_manager.constants.navigation.labels import (
-    INSTRUCTION_UTILISER_FLECHES,
-    USER_CANCEL_MESSAGE,
-)
-console = Console()
+from chess_manager.constants.navigation import labels, titles
 
+console = Console()
 
 
 def prompt_user_for_location_selection(existing_locations: List[str]) -> str | None:
@@ -31,9 +22,9 @@ def prompt_user_for_location_selection(existing_locations: List[str]) -> str | N
 
         # 2. Crée les actions disponibles
         action_choices = [
-            Choice(title=OPTION_ADD_PLAYERS, value=OPTION_ADD_PLAYERS),
-            Choice(title=OPTION_IMPORT_PLAYERS, value=OPTION_IMPORT_PLAYERS),
-            Choice(title=OPTION_QUIT, value=OPTION_QUIT),
+            Choice(title=labels.OPTION_CREATE_NEW_PLAYERS_FILE),
+            Choice(title=labels.OPTION_IMPORT_FILE),
+            Choice(title=labels.OPTION_QUIT_PROGRAM),
         ]
 
         # 3. Affiche un message s’il n’y a aucun groupe existant
@@ -45,8 +36,8 @@ def prompt_user_for_location_selection(existing_locations: List[str]) -> str | N
             ).ask()
 
         # 4. Affiche le menu complet : villes + actions
-        console.print("\n[bold cyan]--- SÉLECTION DU GROUPE DE JOUEURS ---[/bold cyan]")
-        console.print(INSTRUCTION_UTILISER_FLECHES, style="yellow")
+        console.print(titles.STARTING_TITLE_FOR_EXISTING_PLAYER_DATA)
+        console.print(labels.INSTRUCTION_UTILISER_FLECHES, style="yellow")
 
         return select(
             "Choisissez un groupe existant ou une action :",
@@ -54,5 +45,5 @@ def prompt_user_for_location_selection(existing_locations: List[str]) -> str | N
         ).ask()
 
     except (EOFError, KeyboardInterrupt):
-        console.print(USER_CANCEL_MESSAGE, style="red")
+        console.print(labels.USER_CANCEL_MESSAGE, style="red")
         return None

@@ -1,5 +1,4 @@
 from rich.console import Console
-import questionary
 from chess_manager.constants.navigation.menu_keys import CLUB_MANAGEMENT_MENU
 from chess_manager.utils.navigation.menu_builder import display_menu_from_key
 
@@ -16,5 +15,4 @@ def display_club_management_menu(city: str) -> str:
     Returns:
         str | None: L'option sélectionnée ou None si annulée.
     """
-    console.print(f"\n[bold cyan]---- MENU DE GESTION DU CLUB À {city.upper()} ----[/bold cyan]")
     return display_menu_from_key(menu_key=CLUB_MANAGEMENT_MENU, city=city)

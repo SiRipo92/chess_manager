@@ -10,13 +10,8 @@ import logging
 from rich.console import Console
 from rich.panel import Panel
 import questionary
-
-from chess_manager.constants.navigation.titles import (
-    MENU_TITLES,
-    CLUB_MANAGEMENT_MENU_TEMPLATE,
-)
-from chess_manager.constants.navigation.labels import INSTRUCTION_UTILISER_FLECHES
-from chess_manager.utils.navigation.menu_map import MENU_STRUCTURE
+from chess_manager.utils.navigation.menu_map import MENU_REGISTRY
+from chess_manager.constants.navigation import labels, titles
 
 console = Console()
 
@@ -48,40 +43,51 @@ def display_menu_from_key(menu_key: str,
     custom_title: str = None
     ) -> str | None:
     """
-    Displays a menu dynamically based on its internal key and returns the selected option.
+    Affiche dynamiquement un menu à partir de MENU_REGISTRY.
 
     Args:
-        menu_key (str): Internal menu slug (e.g., 'starting_menu', 'player_file').
-        city (str, optional): Required for club management menu titles.
-        log_errors (bool): If True, logs any errors to a file.
-        custom_title (str, optional): Optional custom title for menu titles.
-    Returns:
-        str | None: The selected option string, or None if user cancels or error occurs.
-    """
+        menu_key (str): Clé du menu.
+        city (str, optional): Ville (pour menus dynamiques).
+        log_errors (bool): Active les logs d’erreurs.
+        custom_title (str): Titre forcé.
 
+    Returns:
+        str | None: Option choisie ou None si échappée.
+    """
     def log_error(message: str):
         if log_errors:
             logging.error(message)
 
-    # 2. Dynamic or static title rendering
     try:
+        menu_data = MENU_REGISTRY.get(menu_key)
+        if not menu_data:
+            raise KeyError(f"Menu inconnu pour la clé '{menu_key}'")
+
+        # Titre dynamique
         if custom_title:
             title = custom_title
         elif menu_key == "club_management_menu":
             if not city:
-                error_msg = "Missing city name for club_management_menu"
-                console.print(Panel("[bold red]Une ville est requise pour ce menu.[/bold red]", title="Ville manquante",
-                                    style="red"))
-                log_error(error_msg)
-                return None
-            title = CLUB_MANAGEMENT_MENU_TEMPLATE.format(city=city.upper())
+                raise ValueError("Le menu 'club_management_menu' nécessite un nom de ville.")
+            title = titles.CLUB_MANAGEMENT_MENU_TEMPLATE.format(city=city.upper())
         else:
-            title = MENU_TITLES.get(menu_key)
-            if not title:
-                raise KeyError(f"Title not found for menu_key '{menu_key}'")
+            title = menu_data["title"]
+
+        console.print(title)
+        console.print(labels.INSTRUCTION_UTILISER_FLECHES, style="yellow")
+
+        selected = questionary.select(
+            "Que souhaitez-vous faire ?",
+            choices=menu_data["choices"]
+        ).ask()
+
+        if selected is None:
+            console.print("[bold yellow]Action annulée par l'utilisateur.[/bold yellow]")
+        return selected
+
     except Exception as e:
-        error_msg = f"Failed to render title for '{menu_key}': {str(e)}"
-        console.print(Panel(f"[bold red]{error_msg}[/bold red]", title="Erreur titre", style="red"))
+        error_msg = f"[Menu Error] {str(e)}"
+        console.print(Panel(f"[bold red]{error_msg}[/bold red]", title="Erreur menu", style="red"))
         log_error(error_msg)
         return None
 
@@ -104,7 +110,7 @@ def display_contextual_menu(
     """
     try:
         console.print(title)
-        console.print(INSTRUCTION_UTILISER_FLECHES, style="yellow")
+        console.print(labels.INSTRUCTION_UTILISER_FLECHES, style="yellow")
 
         selected = questionary.select(
             "Que souhaitez-vous faire ?",
@@ -124,3 +130,28 @@ def display_contextual_menu(
             style="red"
         ))
         return None
+
+# ======================
+# Menu Construction Utility functions
+# ======================
+
+def is_escape_option_from_key(option: str, menu_key: str) -> bool:
+    return option in MENU_REGISTRY.get(menu_key, {}).get("escape_actions", [])
+
+def handle_menu_from_key(menu_key: str, escape_sequence: list[str], city: str = None) -> str | None:
+    """
+    Affiche un menu via sa clé et retourne le choix si ce n’est pas une sortie.
+
+    Args:
+        menu_key (str): Clé interne du menu.
+        escape_sequence (list[str]): Options considérées comme échappement.
+        city (str): Nom de ville si nécessaire (pour menus dynamiques).
+
+    Returns:
+        str | None: L’option choisie si elle ne fait pas partie d’une séquence d’échappement.
+                    Sinon, retourne None.
+    """
+    selected = display_menu_from_key(menu_key, city=city)
+    if selected in escape_sequence:
+        return None
+    return selected

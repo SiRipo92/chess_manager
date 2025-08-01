@@ -5,22 +5,14 @@ from rich.table import Table
 from chess_manager.models.player_models import Player
 from chess_manager.constants.player_fields import FIELD_CHOICES, FIELD_LABELS, VALIDATION_MAP
 from chess_manager.constants.navigation.menu_keys import CONFIRM_NEW_PLAYER_MENU, ADD_NEW_PLAYER_MENU
-from chess_manager.constants.navigation.labels import (
-    OPTION_VALIDATE_NEW_PLAYER,
-    OPTION_MODIFY_PLAYER_FIELD,
-    OPTION_CANCEL_NEW_PLAYER,
-    OPTION_YES,
-    OPTION_NO
-)
+from chess_manager.constants.navigation import labels, titles, menu_keys
 from chess_manager.utils.navigation.menu_builder import display_menu_from_key, display_contextual_menu
-from chess_manager.constants.navigation.menu_keys import (
-    PLAYER_MANAGEMENT_MENU,
-    PLAYER_SORT_FILTER_MENU,
-    PLAYER_MODIFICATION_VALIDATION_MENU,
-    PLAYER_FILE_RETURN_MENU,
-    YES_NO_MENU
-)
+from chess_manager.utils.helpers import (
+    display_error_message,
+    prompt_field_with_validation,
+    ask_yes_no,
 
+)
 console = Console()
 
 # Utilise les champs dans l’ordre attendu pour créer un joueur
@@ -55,13 +47,13 @@ def prompt_new_player_inputs_with_review() -> Optional[Tuple[str, str, str, str]
 
         # Choix de l'utilisateur : enregistrer, modifier un champ, ou annuler
         action = display_menu_from_key(menu_key=CONFIRM_NEW_PLAYER_MENU)
-        if action == OPTION_VALIDATE_NEW_PLAYER:
+        if action == labels.OPTION_VALIDATE_NEW_PLAYER:
             return tuple(field_values[label] for label in FIELD_CHOICES)  # type: ignore
-        elif action == OPTION_CANCEL_NEW_PLAYER:
+        elif action == labels.OPTION_CANCEL_NEW_PLAYER:
             return None
-        elif action == OPTION_MODIFY_PLAYER_FIELD:
+        elif action == labels.OPTION_MODIFY_PLAYER_FIELD:
             field_to_edit = prompt_edit_player_field_choice()
-            if field_to_edit == OPTION_CANCEL_NEW_PLAYER:
+            if field_to_edit == labels.OPTION_CANCEL_NEW_PLAYER:
                 continue
 
             suffix = " (YYYY-MM-DD)" if "naissance" in field_to_edit.lower() else ""
@@ -70,24 +62,6 @@ def prompt_new_player_inputs_with_review() -> Optional[Tuple[str, str, str, str]
                 VALIDATION_MAP[field_to_edit]
             )
             field_values[field_to_edit] = cast(str, new_value)
-
-
-def prompt_field_with_validation(label: str, validate_func=None) -> Optional[str]:
-    """
-    Prompt for entering a valid format in player creation/modification
-    """
-    while True:
-        value = questionary.text(label).ask()
-
-        # Vérifie que la saisie n'est pas vide
-        if not value:
-            display_error_message("Ce champ ne peut pas être vide.")
-            continue
-        # Vérifie la validité du format si une fonction de validation est fournie
-        if validate_func and not validate_func(value):
-            display_error_message("Format invalide. Veuillez réessayer.")
-            continue
-        return value
 
 
 def prompt_edit_player_field_choice() -> str:
@@ -172,7 +146,7 @@ def confirm_field_update(field_name: str, new_value: str) -> str:
     """
     message = f"[{field_name}] sera mis à jour avec : {new_value}. Confirmer ?"
     return display_menu_from_key(
-        menu_key=PLAYER_MODIFICATION_VALIDATION_MENU,
+        menu_key=menu_keys.PLAYER_MODIFICATION_VALIDATION_MENU,
         custom_title=message
     )
 
@@ -183,13 +157,6 @@ def confirm_player_updated() -> None:
 # =========================
 # 3. Display Functions
 # =========================
-
-
-def display_error_message(reason: str):
-    """
-    Affiche un message d'erreur avec une raison explicite.
-    """
-    console.print(f"❌ [red]Erreur : {reason}[/red]")
 
 
 def display_player_brief_info(player: Player) -> None:
@@ -301,14 +268,14 @@ def display_player_management_menu() -> str | None:
     """
     Affiche dynamiquement le menu principal de gestion des joueurs.
     """
-    return display_menu_from_key(menu_key=PLAYER_MANAGEMENT_MENU)
+    return display_menu_from_key(menu_key=menu_keys.PLAYER_MANAGEMENT_MENU)
 
 
 def show_player_sort_filter_menu() -> str:
     """
     Affiche dynamiquement le menu de tri et de filtrage des joueurs.
     """
-    return display_menu_from_key(menu_key=PLAYER_SORT_FILTER_MENU)
+    return display_menu_from_key(menu_key=menu_keys.PLAYER_SORT_FILTER_MENU)
 
 
 def display_player_file_menu(player: Player) -> str | None:
@@ -326,17 +293,16 @@ def display_player_file_menu(player: Player) -> str | None:
     display_full_player_profile(player)
 
     # 2. Demande à l'utilisateur s’il souhaite modifier ce joueur
-    console.print("\n[blue]Souhaitez-vous modifier ce joueur ?[/blue]\n")
-    action = display_menu_from_key(menu_key=YES_NO_MENU)
+    action = ask_yes_no("Voulez-vous modifier ce joueur ?")
 
-    if action == OPTION_YES:
+    if action == labels.OPTION_YES:
         # This menu should have the player_fields to edit
         # With a modification escape sequence menu
         return prompt_player_bio_update_choice(player)
 
-    elif action == OPTION_NO:
+    elif action == labels.OPTION_NO:
         # 3. Si NON : proposer où retourner ensuite
         console.print("\n[blue]Où souhaitez-vous retourner dans le programme ?[/blue]\n")
-        next_action = display_menu_from_key(menu_key=PLAYER_FILE_RETURN_MENU)
+        next_action = display_menu_from_key(menu_key=menu_keys.PLAYER_FILE_RETURN_MENU)
 
         return next_action

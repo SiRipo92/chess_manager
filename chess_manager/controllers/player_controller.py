@@ -4,20 +4,45 @@ import os
 from rich.console import Console
 from typing import List, Optional, Tuple
 
+from chess_manager.constants.navigation.labels import OPTION_RETURN_TO_CLUB_MENU, OPTION_RETURN_TO_PLAYERS_MENU
 from chess_manager.models.player_models import Player
 from chess_manager.constants.player_fields import VALIDATION_MAP
+from chess_manager.utils.player_validators import is_valid_name, is_valid_birthdate, is_valid_id
 from chess_manager.views import player_views
 from chess_manager.constants.player_repository import BASE_PLAYER_DIRECTORY, PLAYER_FILENAME
-from chess_manager.constants.navigation.labels import (
-    OPTION_SHOW_PLAYERS,
-    OPTION_SORT_PLAYERS,
-    OPTION_SHOW_PLAYER_FILE,
-    OPTION_ADD_NEW_PLAYER,
-    OPTION_GO_BACK,
-    OPTION_QUIT_PROGRAM
+from chess_manager.constants.navigation import labels, titles, menu_keys
+from chess_manager.utils.helpers import (
+    display_error_message,
+    raise_quit_program,
 )
+from chess_manager.utils.navigation import menu_builder, menu_map
 
 console = Console()
+
+
+# Unified field definitions with validator and setter
+FIELD_DEFINITIONS = {
+    labels.FIELD_LAST_NAME: {
+        "label": labels.FIELD_LAST_NAME,
+        "validator": is_valid_name,
+        "setter": Player.set_last_name
+    },
+    labels.FIELD_FIRST_NAME: {
+        "label": labels.FIELD_FIRST_NAME,
+        "validator": is_valid_name,
+        "setter": Player.set_first_name
+    },
+    labels.FIELD_BIRTHDATE: {
+        "label": labels.FIELD_BIRTHDATE,
+        "validator": is_valid_birthdate,
+        "setter": Player.set_birthdate
+    },
+    labels.FIELD_ID: {
+        "label": labels.FIELD_ID,
+        "validator": is_valid_id,
+        "setter": Player.set_national_id
+    },
+}
 
 
 def get_player_filepath_for_city(city: str) -> str:
@@ -28,6 +53,19 @@ def get_player_filepath_for_city(city: str) -> str:
     # Function needed to set up Player File storage by Location
     sanitized_city = city.strip().title()
     return os.path.join(str(BASE_PLAYER_DIRECTORY), sanitized_city, str(PLAYER_FILENAME))
+
+
+def get_menu_actions(self) -> dict:
+    """
+    Retourne un dictionnaire d'actions du menu, mappées à des méthodes du contrôleur.
+    """
+    return {
+        labels.OPTION_ADD_NEW_PLAYER: self.handle_add_new_player,
+        labels.OPTION_SHOW_PLAYERS: lambda: player_views.display_all_players(self.load_players()),
+        labels.OPTION_SHOW_PLAYER_FILE: self.handle_player_file_view,
+
+        labels.OPTION_QUIT_PROGRAM: lambda: exit(),
+    }
 
 
 class PlayerController:
@@ -137,14 +175,14 @@ class PlayerController:
         """
         result = player_views.prompt_new_player_inputs_with_review()
         if result is None:
-            player_views.display_error_message("Ajout annulé.")
+            display_error_message("Ajout annulé.")
             return
         last_name, first_name, birthdate, national_id = result
         success, message = self.add_new_player(last_name, first_name, birthdate, national_id)
         if success:
             player_views.confirm_player_added()
         else:
-            player_views.display_error_message(message)
+            display_error_message(message)
 
     # ======================
     # 3. Player Retrieval
@@ -171,8 +209,21 @@ class PlayerController:
                         return Player.from_dict(p)
             return None
         except Exception as e:
-            player_views.display_error_message(f"Erreur de lecture des joueurs : {e}")
+            display_error_message(f"Erreur de lecture des joueurs : {e}")
             return None
+
+    def handle_player_file_view(self) -> None:
+        """
+        Simplifies the handling of the requests/displays
+        for the retrieving the player id and retrieving the player profile
+        """
+        player_id = player_views.prompt_player_national_id()
+        player = self.get_player_by_id(player_id)
+        if player:
+            player_views.display_full_player_profile(player)
+        else:
+            player_views.display_error_message("Aucun joueur trouvé.")
+
 
     # ======================
     # 4. Sorting & Searching
@@ -223,13 +274,13 @@ class PlayerController:
 
         player = self.get_player_by_id(player_id)
         if not player:
-            player_views.display_error_message("Aucun joueur trouvé avec cet identifiant.")
+            display_error_message("Aucun joueur trouvé avec cet identifiant.")
             return
         try:
             stats = player.get_stats_summary(None)
             player_views.display_stats_summary(stats)
         except Exception as e:
-            player_views.display_error_message(f"Erreur lors de la récupération des stats : {e}")
+            display_error_message(f"Erreur lors de la récupération des stats : {e}")
 
     def record_match_for_player(self) -> None:
         """
@@ -248,7 +299,7 @@ class PlayerController:
         player_id = player_views.prompt_player_national_id()
         player = self.get_player_by_id(player_id)
         if not player:
-            player_views.display_error_message("Aucun joueur trouvé avec cet identifiant.")
+            display_error_message("Aucun joueur trouvé avec cet identifiant.")
             return
         match_name, result = player_views.prompt_match_result()
         if not match_name or not result:
@@ -263,9 +314,9 @@ class PlayerController:
             self.save_players(players)
             console.print("✅ Match enregistré avec succès.")
         except ValueError as e:
-            player_views.display_error_message(str(e))
+            display_error_message(str(e))
         except Exception as e:
-            player_views.display_error_message(f"Erreur inattendue : {e}")
+            display_error_message(f"Erreur inattendue : {e}")
 
     # ======================
     # 6. Player Management
@@ -274,36 +325,46 @@ class PlayerController:
         while True:
             action = player_views.display_player_management_menu()
 
-            if action == "1":
+            if action == labels.OPTION_SHOW_PLAYERS:
                 players = self.load_players()
                 player_views.display_all_players(players)
 
-            elif action == "2":
+            elif action == labels.OPTION_SORT_PLAYERS:
                 result = self.handle_user_sort_filter_menu()
-                if result == "return_to_main":
+                # Option Go Back or Quit Program
+                if result == labels.OPTION_QUIT_PROGRAM:
                     return
-                elif result == "return_to_players":
+                elif result == labels.OPTION_GO_BACK:
                     continue
 
-            elif action == "3":
+            elif action == labels.OPTION_SHOW_PLAYER_FILE:
                 player_id = player_views.prompt_player_national_id()
                 player = self.get_player_by_id(player_id)
                 if not player:
-                    player_views.display_error_message("Aucun joueur trouvé avec cet ID.")
+                    display_error_message("Aucun joueur trouvé avec cet ID.")
                 else:
-                    player_views.display_full_player_profile(player)
                     action_result = self.handle_actions_on_player_page_menu(player)
-                    if action_result == "return_to_main":
-                        return
+                    if action_result == OPTION_RETURN_TO_CLUB_MENU:
+                        return  # back to club menu
+                    elif action_result == labels.OPTION_RETURN_TO_STARTING_MENU:
+                        return  # or bubble up as appropriate
+                    elif action_result == labels.OPTION_RETURN_TO_PLAYER_FILE:
+                        continue  # stay on player view / re-enter loop as needed
 
-            elif action == "4":
+            elif action == labels.OPTION_ADD_NEW_PLAYER:
                 self.handle_add_new_player()
 
-            elif action == "5":
+
+            elif action == labels.OPTION_QUIT_PROGRAM:
+
+                raise_quit_program()
+
+
+            elif action == labels.STANDARD_ESCAPE_SEQUENCE:
                 break
 
             else:
-                player_views.display_error_message("Option invalide.")
+                display_error_message("Option invalide.")
 
     # Méthode pour modifier le bio d'un joueur
     def update_player_info(self, player: Player) -> None:
@@ -312,41 +373,37 @@ class PlayerController:
         """
         while True:
             field_to_edit = player_views.prompt_edit_player_field_choice()
-            if field_to_edit == "Annuler":
+            if field_to_edit == labels.OPTION_CANCEL_PLAYER_MODIFICATION:
                 return
 
-            new_value = player_views.prompt_field_with_validation(
-                f"{field_to_edit} :", VALIDATION_MAP[field_to_edit]
-            )
+            field_def = FIELD_DEFINITIONS.get(field_to_edit)
+            if not field_def:
+                player_views.display_error_message("Champ non reconnu.")
+                continue
+
+            validator = field_def["validator"]
+            setter = field_def["setter"]
+
+            new_value = player_views.prompt_field_with_validation(f"{field_to_edit} :", validator)
 
             if not new_value:
                 player_views.display_error_message("Aucune valeur saisie.")
                 continue
 
             confirmation = player_views.confirm_field_update(field_to_edit, new_value)
-            if confirmation == "Annuler":
+            if confirmation == labels.OPTION_CANCEL_PLAYER_MODIFICATION:
                 return
-            elif confirmation == "Réessayer":
+            elif confirmation == labels.OPTION_TRY_AGAIN:
                 continue
 
-            # Validation-specific logic for national_id uniqueness
-            if field_to_edit == "Identifiant national":
+            # Uniqueness check for national ID
+            if field_to_edit == labels.FIELD_ID:
                 all_players = self.load_players()
                 if any(p.national_id == new_value and p != player for p in all_players):
                     player_views.display_error_message("Cet identifiant est déjà utilisé par un autre joueur.")
                     continue
-                player.set_national_id(new_value)
 
-            elif field_to_edit == "Nom de famille":
-                player.set_last_name(new_value)
-
-            elif field_to_edit == "Prénom":
-                player.set_first_name(new_value)
-
-            elif field_to_edit == "Date de naissance":
-                player.set_birthdate(new_value)
-
-            # Save player changes
+            setter(player, new_value)
             self._save_player(player)
             player_views.confirm_player_updated()
             player_views.display_full_player_profile(player)
@@ -363,86 +420,100 @@ class PlayerController:
                 break
         self.save_players(players)
 
-    def handle_actions_on_player_page_menu(self, player: Player, max_loops: int = 10) -> str:
+    def handle_actions_on_player_page_menu(self, player: Player) -> str:
         """
-        Gère les actions sur la fiche d’un joueur. Retourne une chaîne selon l’action choisie.
-
-        Paramètres :
-            player (Player): Le joueur concerné.
-            max_loops (int): Nombre maximal d’itérations pour éviter une boucle infinie
-            en cas d’erreur (par défaut : 10).
-
-        Retour :
-            str : "return_to_players", "return_to_main", ou "" si aucune sortie claire.
+        Gère les actions après affichage de la fiche d’un joueur.
+        Permet de modifier les informations ou de retourner à différents menus.
         """
-        loop_count = 0
-
-        while loop_count < max_loops:
-            action = player_views.display_user_action_menu_for_player_page(player)
-
-            if action == ACTION_UPDATE_INFO:
+        """
+            Gère les actions après affichage de la fiche d’un joueur.
+            Retourne une constante indiquant ce que l’appelant doit faire ensuite.
+            """
+        while True:
+            action = player_views.ask_yes_no(titles.PLAYER_MOD_YES_NO_TITLE)
+            if action == labels.OPTION_YES:
                 self.update_player_info(player)
+                # After editing, stay on player file view
+                return labels.OPTION_RETURN_TO_PLAYER_FILE
 
-            elif action == ACTION_BACK_TO_PLAYERS:
-                return "return_to_players"
+            elif action == labels.OPTION_NO:
+                next_action = player_views.display_menu_from_key(
+                    menu_keys.PLAYER_MODIFICATION_ESCAPE_SEQUENCE
+                )
+                if not next_action:
+                    console.print("[red]Menu introuvable ou annulé. Retour à la fiche joueur.[/red]")
+                    return labels.OPTION_RETURN_TO_PLAYER_FILE
 
-            elif action == ACTION_BACK_TO_MAIN:
-                return "return_to_main"
+                if next_action == labels.OPTION_CANCEL_PLAYER_MODIFICATION:
+                    return labels.OPTION_RETURN_TO_PLAYER_FILE  # go back to profile / yes-no loop
+
+                elif next_action == labels.OPTION_RETURN_TO_PLAYER_FILE:
+                    # Redisplay and re-prompt
+                    player_views.display_full_player_profile(player)
+                    continue  # loop again to ask yes/no
+
+                elif next_action == labels.OPTION_RETURN_TO_STARTING_MENU:
+                    return labels.OPTION_RETURN_TO_STARTING_MENU
+
+                elif next_action == labels.OPTION_QUIT_PROGRAM:
+                    raise SystemExit()
+
+                else:
+                    display_error_message("Option invalide.")
+                    return None
 
             else:
-                player_views.display_error_message("Option invalide.")
+                display_error_message("Choix invalide.")
+                return None
 
-            loop_count += 1
-
-        # Si la boucle dépasse le maximum, afficher une erreur et sortir.
-        player_views.display_error_message("Trop de tentatives invalides. Retour au menu précédent.")
-        return "return_to_main"
 
     def handle_user_sort_filter_menu(self) -> str:
         while True:
             players = self.load_players()
             choice = player_views.show_player_sort_filter_menu()
 
-            if choice == "1":
+            # Sort by ascending last names (normal)
+            if choice == labels.OPTION_SORT_BY_NAME_ASC:
                 sorted_players = self.sort_players_by_name(players)
                 player_views.display_all_players(sorted_players)
-
-            elif choice == "2":
+            # Sort by descending last names
+            elif choice == labels.OPTION_SORT_BY_NAME_DESC:
                 sorted_players = self.sort_players_by_name(players, reverse=True)
                 player_views.display_all_players(sorted_players)
-
-            elif choice == "3":
+            # sort by player rank
+            elif choice == labels.OPTION_SORT_BY_RANKING:
                 ranked_players = self.sort_players_by_ranking(players)
                 player_views.display_all_players(ranked_players)
-
-            elif choice == "4":
+            # filter by partial ID
+            elif choice == labels.OPTION_SEARCH_BY_ID:
                 partial_id = player_views.prompt_player_national_id("Entrez une partie de l’ID à rechercher : ")
                 filtered_players = self.find_player_by_id(players, partial_id)
                 player_views.display_all_players(filtered_players)
-
-            elif choice == "5":
+            # filter by last name
+            elif choice == labels.OPTION_SEARCH_BY_NAME:
                 partial_name = player_views.prompt_player_name_filter()
                 filtered_players = self.find_player_by_name(players, partial_name)
                 player_views.display_all_players(filtered_players)
-
-            elif choice == "6":
+            # view a player's profile
+            elif choice == labels.OPTION_VIEW_PLAYER_FILE:
                 player_id = player_views.prompt_player_national_id()
                 player = self.get_player_by_id(player_id)
                 if player:
                     player_views.display_full_player_profile(player)
+                    # Show player profile menu
                     result = self.handle_actions_on_player_page_menu(player)
-                    if result == "return_to_main":
-                        return "return_to_main"
-                    elif result == "return_to_players":
-                        return "return_to_players"
+                    if result == labels.OPTION_RETURN_TO_CLUB_MENU:
+                        return # The action that handles this return to club menu view & controller
+                    elif result == labels.OPTION_RETURN_TO_PLAYERS_MENU:
+                        return # The action that handles this return to player menu view & controller
                 else:
-                    player_views.display_error_message("Aucun joueur trouvé avec cet ID.")
+                    display_error_message("Aucun joueur trouvé avec cet ID.")
 
-            elif choice == "7":
-                return "return_to_players"
+            elif choice == labels.OPTION_RETURN_TO_CLUB_MENU:
+                return # The action that returns the player to the club menu view & controller
 
-            elif choice == "8":
-                exit()
+            elif choice == labels.OPTION_QUIT_PROGRAM:
+                raise_quit_program()
 
             else:
-                player_views.display_error_message("Option invalide.")
+                display_error_message("Option invalide.")

@@ -1,11 +1,3 @@
-# Validate input
-#
-# Create a Tournament object
-#
-# Call TournamentRepository.add_tournament()
-#
-# Confirm success to the user
-
 from chess_manager.views.tournament_views import  prompt_tournament_info
 from chess_manager.models.tournament_models import Tournament
 from chess_manager.models.tournament_repository import TournamentRepository
@@ -35,3 +27,4 @@ def manage_tournament():
     """
     handles displays of tournament management view show_tournament_main_menu()
     """
+    pass
