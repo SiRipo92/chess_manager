@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import List, Dict
 from chess_manager.models.match_models import Match
+from chess_manager.models.player_models import Player
 
 
 class Round:
@@ -33,19 +34,13 @@ class Round:
         Paramètre :
             match (Match) : Le match à ajouter.
         """
-        pass
+        self.matches.append(match)
 
     def end_round(self) -> None:
         """
         Marque la fin du tour en enregistrant l’heure actuelle comme heure de fin.
         """
-        pass
-
-    def play_all_matches(self) -> None:
-        """
-        Exécute tous les matchs du tour (simulation ou saisie manuelle des résultats).
-        """
-        pass
+        self.end_time = datetime.now().isoformat()
 
     def to_dict(self) -> Dict:
         """
@@ -54,17 +49,31 @@ class Round:
         Retour :
             dict : Représentation sérialisée du tour.
         """
-        pass
+        return {
+            "round_number": self.round_number,
+            "name": self.name,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "matches": [match.to_dict() for match in self.matches],
+        }
 
     @classmethod
-    def from_dict(cls, data: Dict) -> "Round":
+    def from_dict(
+            cls,
+            data: Dict,
+            player_lookup: Dict[str, Player],
+    ) -> "Round":
         """
-        Crée une instance de Round à partir d’un dictionnaire (données JSON).
-
-        Paramètre :
-            data (dict) : Données sérialisées du tour.
-
-        Retour :
-            Round : Instance reconstituée.
+        Reconstitue un Round à partir d’un dict + un index {national_id: Player}.
+        Le player_lookup est fourni par le contrôleur pour éviter de dupliquer des joueurs.
         """
-        pass
+        round = cls(round_number=int(data["round_number"]))
+        round.start_time = data.get("start_time", round.start_time)
+        round.end_time = data.get("end_time", "")
+
+        # Recréer chaque match à partir des ids
+        round.matches = [
+            Match.from_dict(match, player_lookup=player_lookup)
+            for match in data.get("matches", [])
+        ]
+        return round

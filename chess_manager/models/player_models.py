@@ -1,23 +1,3 @@
-# ===========================
-# Player Model Structure Map
-# ===========================
-#
-# 1. Initialization & Properties
-#    - __init__, @property methods
-#
-# 2. Player Stat Management
-#    - record_match_result, record_tournament_win
-#    - get_stats_summary
-#
-# 3. Player Attribute Mutators
-#    - set_last_name, set_first_name, set_birthdate, set_national_id
-#
-# 4. Serialization
-#    - to_dict, from_dict
-#
-# 5. Static Loading & Saving
-#    - load_all_players, save_all_players
-
 from datetime import datetime
 from typing import List, Dict
 import json
