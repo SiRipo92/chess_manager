@@ -58,6 +58,69 @@ def _create_and_open_tournament(
         _manage_tournament_player_menu(repo, current, controller)
 
 
+def _tournament_progress_percent(t: dict | object) -> int:
+    """Return 0/25/50/75/100 based on closed rounds vs number_rounds."""
+    if _is_finished(t):
+        return 100
+    if not _is_started(t):
+        return 0
+
+    rounds = getattr(t, "rounds", None)
+    if rounds is None and isinstance(t, dict):
+        rounds = t.get("rounds")
+
+    total = getattr(t, "number_rounds", None)
+    if total is None and isinstance(t, dict):
+        total = t.get("number_rounds", 0)
+    if not isinstance(total, int) or total <= 0:
+        total = len(rounds) if isinstance(rounds, list) else 0
+    if total <= 0:
+        return 0
+
+    closed = 0
+    if isinstance(rounds, list):
+        for r in rounds:
+            if isinstance(r, dict):
+                if r.get("end_time"):
+                    closed += 1
+                    continue
+                matches = r.get("matches", [])
+                if matches and all(
+                    (m.get("player2") is None) or
+                    (m.get("result1") is not None or m.get("result2") is not None) or
+                    (m.get("score1") is not None and m.get("score2") is not None)
+                    for m in matches
+                ):
+                    closed += 1
+            else:
+                if getattr(r, "end_time", None):
+                    closed += 1
+                    continue
+                matches = getattr(r, "matches", []) or []
+                if matches and all(
+                    (getattr(m, "player2", None) is None) or
+                    (getattr(m, "result1", None) is not None or getattr(m, "result2", None) is not None) or
+                    (getattr(m, "score1", None) is not None and getattr(m, "score2", None) is not None)
+                    for m in matches
+                ):
+                    closed += 1
+
+    pct = int(round((closed / float(total)) * 100))
+    if total == 4:
+        pct = {0: 0, 1: 25, 2: 50, 3: 75, 4: 100}.get(closed, pct)
+    return max(0, min(100, pct))
+
+
+def _status_label_plain(t: dict | object) -> str:
+    """Plain text: 'Terminé', 'Non démarré', or 'En cours {pct}%'."""
+    if _is_finished(t):
+        return "Terminé"
+    # _tournament_progress_percent must already exist
+    pct = _tournament_progress_percent(t)
+    if pct <= 0:
+        return "Non démarré"
+    return f"En cours {pct}%"
+
 def _select_existing_tournament(repo: TournamentRepository) -> Optional[dict]:
     """Allows user to select from an existing tournament
         -- can be built out more later to view, sort, filter and modify tournament objects
@@ -80,10 +143,13 @@ def _select_existing_tournament(repo: TournamentRepository) -> Optional[dict]:
     if len(candidates) == 1:
         return candidates[0]
 
-    choices = [
-        {"name": t.get("name", f"Untitled_{i+1}"), "value": t.get("name")}
-        for i, t in enumerate(candidates)
-    ]
+    # Show status next to each tournament name (colored if possible).
+    choices = []
+    for i, t in enumerate(candidates):
+        name = t.get("name", f"Sans titre_{i + 1}")
+        badge = _status_label_plain(t)  # plain text only
+        choices.append({"name": f"{name}  —  {badge}", "value": t.get("name")})
+
     selected_name = questionary.select("Sélectionnez un tournoi à gérer :", choices=choices).ask()
     if not selected_name:
         return None
@@ -251,8 +317,7 @@ def _manage_tournament_player_menu(
     repo: TournamentRepository, tournament: dict, controller: PlayerController
 ) -> None:
     """
-    Menu to add players, launch/resume/summary depending on status, or quit.
-    Removed the legacy 'import players.json' option.
+    Menu to add players (only before start), launch/resume/summary depending on status, or quit.
     """
     while True:
         players_in_tournament = _extract_players_from_tournament(tournament, controller)
@@ -266,14 +331,18 @@ def _manage_tournament_player_menu(
         )
         console.print()
 
-        # --- compute state flags for menu gating (build choices only once)
+        # --- state flags
         started = _is_started(tournament)
         finished = _is_finished(tournament)
         enough = len(players_in_tournament) >= 8
 
-        choices = [{"name": "1. Ajouter un joueur manuellement", "value": "add"}]
+        # Unified status line (always shown)
+        console.print(f"[dim]Statut : {_status_label_plain(tournament)}[/dim]")
 
+        # --- build choices by status (no extra status prints below)
         if not started and not finished:
+            # Only BEFORE start can we add players
+            choices = [{"name": "1. Ajouter un joueur manuellement", "value": "add"}]
             if enough:
                 choices.append({"name": "2. Lancer le tournoi", "value": "launch"})
             else:
@@ -282,12 +351,22 @@ def _manage_tournament_player_menu(
                     "name": f"2. Lancer le tournoi (requiert {missing} joueur(s) de plus)",
                     "value": "launch_disabled",
                 })
+            choices.append({"name": "3. Quitter", "value": "quit"})
 
-        if started and not finished:
-            choices.append({"name": "2. Reprendre la saisie / continuer", "value": "resume"})
-        if finished:
-            choices.append({"name": "2. Voir le récapitulatif", "value": "summary"})
-        choices.append({"name": "3. Quitter", "value": "quit"})
+        elif started and not finished:
+            # In progress: resume only; no adding players
+            choices = [
+                {"name": "1. Reprendre la saisie / continuer", "value": "resume"},
+                {"name": "2. Quitter", "value": "quit"},
+            ]
+
+        else:
+            # Finished
+            choices = [
+                {"name": "1. Voir le récapitulatif", "value": "summary"},
+                {"name": "2. Quitter", "value": "quit"},
+            ]
+
         action = questionary.select("Que souhaitez-vous faire ?", choices=choices).ask()
 
         if action == "add":
@@ -304,7 +383,7 @@ def _manage_tournament_player_menu(
                 player_views.display_error_message("Impossible de retrouver le joueur après création.")
                 continue
 
-            existing_ids = set([p.national_id for p in players_in_tournament])
+            existing_ids = {p.national_id for p in players_in_tournament}
             if new_player.national_id not in existing_ids:
                 tournament_players = tournament.get("players", [])
                 tournament_players.append(new_player.to_dict())
