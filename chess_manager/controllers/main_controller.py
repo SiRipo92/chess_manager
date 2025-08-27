@@ -12,7 +12,6 @@ from chess_manager.controllers.tournament_controller import (
     launch_first_round_flow,
     run_rounds_until_done,
 )
-from chess_manager.utils.tournament_utils import debug_print_tournament_winners
 
 console = Console()
 
@@ -354,7 +353,6 @@ def handle_main_menu(controller: PlayerController) -> None:
         global_players = controller.load_players()
 
         all_tournaments = tournaments_repo.load_all_tournaments()
-        debug_print_tournament_winners(all_tournaments)
         stats_index = build_player_tournament_index(all_tournaments)
 
         console.print("\n" + "-" * 60)
