@@ -1,10 +1,8 @@
 import os
 from datetime import datetime
-
 from rich.console import Console
 from rich.panel import Panel
 from rich.align import Align
-
 from chess_manager.controllers.player_controller import PlayerController
 from chess_manager.controllers.main_controller import handle_main_menu
 

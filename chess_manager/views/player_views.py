@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict
 import questionary
 from rich.console import Console
 from rich.table import Table
@@ -22,6 +22,7 @@ def _safe_ask(prompt_callable, default: Optional[str] = None) -> Optional[str]:
 # --------------------
 # Input / Creation
 # --------------------
+
 def prompt_new_player_inputs_with_review() -> Optional[Tuple[str, str, str, str]]:
     field_values: Dict[str, str] = {}
 
@@ -112,32 +113,50 @@ def display_player_brief_info(player: Player) -> None:
         table.add_row(label, str(value))
     console.print(table)
 
-
-def display_all_players(players: List[Player]):
+def display_all_players(players, scope="global", stats_index=None, show_enrollment=False):
+    """Affiche les joueurs (stats facultatives via stats_index)."""
     if not players:
-        console.print("[yellow]Aucun joueur enregistré.[/yellow]")
+        console.print("[yellow]Aucun joueur à afficher.[/yellow]")
         return
 
-    table = Table(title="Joueurs enregistrés")
-    table.add_column("#", style="cyan")
-    table.add_column("Nom complet")
-    table.add_column("ID")
-    table.add_column("Naissance")
-    table.add_column("Âge")
-    table.add_column("Inscription")
+    title = "Joueurs globaux (base complète)" if scope == "global" else "Joueurs du tournoi courant"
+    table = Table(title=title)
+
+    table.add_column("#", style="cyan", justify="right", no_wrap=True)
+    table.add_column("Nom complet", overflow="fold")
+    table.add_column("ID", no_wrap=True)
+    table.add_column("Âge", justify="right", no_wrap=True)
+    table.add_column("Matchs", justify="right", no_wrap=True)
+    table.add_column("Points", justify="right", no_wrap=True)
+    table.add_column("Tournois", justify="right", no_wrap=True)   # participations
+    table.add_column("Victoires", justify="right", no_wrap=True)  # victoires ou égalités 1ère place
+
+    if show_enrollment:
+        table.add_column("Inscription", no_wrap=True)
 
     for idx, player in enumerate(players, 1):
-        table.add_row(
+        stats = (stats_index or {}).get(player.national_id, {})
+
+        total_matches = stats.get("matchs", len(player.match_history or []))
+        total_points = stats.get("points", player.get_total_score())
+        participations = stats.get("participations", 0)
+        victoires = stats.get("victoires", stats.get("wins", 0))  # fallback if a caller still provides 'wins'
+
+        row = [
             str(idx),
             f"{player.last_name.upper()}, {player.first_name}",
             player.national_id,
-            player.birthdate,
             str(player.age),
-            player.date_enrolled,
-        )
+            str(total_matches),
+            f"{float(total_points):.1f}",
+            str(participations),
+            str(victoires),
+        ]
+        if show_enrollment:
+            row.append(player.date_enrolled)
+
+        table.add_row(*row)
     console.print(table)
-
-
 # --------------------
 # Menu
 # --------------------

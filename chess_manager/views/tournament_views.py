@@ -201,4 +201,4 @@ def display_tournament_recap(tournament) -> None:
         matrix.add_row(*row)
 
     console.print(matrix)
-    console.print("Tournament Finished. Returning to main menu")
+    console.print("Le tournoi est terminé. Retour au menu principale ... ")

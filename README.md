@@ -15,6 +15,10 @@ chess_manager/                  # Project root
 │
 ├── repositories/              # Persistence layer for loading/saving JSON files
 ├── data/                      # Directory containing JSON data files
+│   ├── players/
+│   │   ├── players.json       # JSON data file with enrolled players
+│   ├── tournaments/
+│   │   ├── tournaments.json   # TOURNAMENT REPOSITORY - Persistent memory/json of all tournaments played
 ├── main.py                    # CLI entry point
 ├── requirements.txt           # Python dependencies
 ├── .gitignore

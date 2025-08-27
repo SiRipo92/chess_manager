@@ -72,7 +72,3 @@ class TournamentRepository:
             if (t.get("name") or "").strip().lower() == key:
                 return dict(t)  # shallow copy
         return None
-
-    def get_tournament_by_location(self, location: str) -> List[dict]:
-        key = location.strip().lower()
-        return [dict(t) for t in self.tournaments if key in (t.get("location","").lower())]

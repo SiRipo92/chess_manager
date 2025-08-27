@@ -1,20 +1,18 @@
-import os
-import random
+from __future__ import annotations
 from datetime import datetime
-from typing import Optional, Union
-
+from typing import Optional, Union, List
 import questionary
 from rich.console import Console
-from rich.table import Table
-
-from chess_manager.views import player_views
+from chess_manager.views import player_views, round_views
+from chess_manager.models.player_models import Player
 from chess_manager.controllers.player_controller import PlayerController
 from chess_manager.models.tournament_repository import TournamentRepository
-from chess_manager.utils.tournament_utils import generate_tournament_name, browse_for_file
+from chess_manager.utils.tournament_utils import generate_tournament_name, build_player_tournament_index
 from chess_manager.controllers.tournament_controller import (
     launch_first_round_flow,
     run_rounds_until_done,
 )
+from chess_manager.utils.tournament_utils import debug_print_tournament_winners
 
 console = Console()
 
@@ -22,6 +20,45 @@ console = Console()
 # ----------------------
 # Helpers
 # ----------------------
+
+def _prompt_location() -> Optional[str]:
+    """Helper function to obtain the location of the tournament to be turned into a slug for file naming"""
+    loc = questionary.text("Lieu du tournoi :").ask()
+    if not loc or not loc.strip():
+        player_views.display_error_message("Lieu requis pour nom de tournoi.")
+        return None
+    return loc.strip()
+
+
+def _create_and_open_tournament(
+    repo: TournamentRepository,
+    location: str,
+    players: List[Player],
+    controller: PlayerController,
+    success_message_template: str,
+) -> None:
+    """Creates new tournament object in tournament repo, obtains location and players in order to open and prepare a
+    tournament.
+    """
+    existing = repo.load_all_tournaments()
+    name = generate_tournament_name(location, existing)
+    meta = {
+        "name": name,
+        "location": location,
+        "players": [p.to_dict() for p in players],
+        "created_at": datetime.now().isoformat(),
+    }
+    repo.add_tournament(meta)
+
+    # Interpolate both {name} and {count} when present in the template
+    console.print(success_message_template.format(name=name, count=len(players)))
+
+    current = repo.get_tournament_by_name(name)
+    if current:
+        current = _as_dict(current)
+        _manage_tournament_player_menu(repo, current, controller)
+
+
 def _select_existing_tournament(repo: TournamentRepository) -> Optional[dict]:
     """Allows user to select from an existing tournament
         -- can be built out more later to view, sort, filter and modify tournament objects
@@ -31,15 +68,19 @@ def _select_existing_tournament(repo: TournamentRepository) -> Optional[dict]:
     for t in raw_list:
         if isinstance(t, dict):
             candidates.append(t)
-        else:
+        elif hasattr(t, "to_dict") and callable(getattr(t, "to_dict")):
+            # Only catch likely/known issues; avoid a broad blanket.
             try:
-                candidates.append(t.to_dict())  # type: ignore
-            except Exception:
+                candidates.append(t.to_dict())  # type: ignore[call-arg]
+            except (TypeError, ValueError, AttributeError):
                 continue
+        # if neither dict nor model-like, skip silently
+
     if not candidates:
         return None
     if len(candidates) == 1:
         return candidates[0]
+
     choices = [
         {"name": t.get("name", f"Untitled_{i+1}"), "value": t.get("name")}
         for i, t in enumerate(candidates)
@@ -54,10 +95,12 @@ def _select_existing_tournament(repo: TournamentRepository) -> Optional[dict]:
 
 
 def _extract_players_from_tournament(tournament: Union[dict, object], controller: PlayerController):
-    """Reviews tournament repository to extract a list of players if no players.json file is provided"""
-    from chess_manager.models.player_models import Player
+    """
+    Rebuild a list of Player objects from a stored tournament, whether
+    it is a dict or an object. Duplicates (by national_id) are removed.
+    """
 
-    collected = []
+    collected: List[Player] = []
     if isinstance(tournament, dict):
         raw_players = tournament.get("players", [])
     else:
@@ -67,7 +110,7 @@ def _extract_players_from_tournament(tournament: Union[dict, object], controller
         if isinstance(p, dict):
             try:
                 collected.append(Player.from_dict(p))
-            except Exception:
+            except (KeyError, TypeError, ValueError):
                 continue
         elif isinstance(p, str):
             candidate = controller.get_player_by_id(p)
@@ -79,14 +122,67 @@ def _extract_players_from_tournament(tournament: Union[dict, object], controller
     return list(unique.values())
 
 
+def _is_started(t: dict | object) -> bool:
+    """
+    Return True if a tournament has started (has started_at or a positive
+    current_round_number), False otherwise.
+
+    Works for both raw dict tournaments and model objects.
+    """
+    if isinstance(t, dict):
+        return bool(t.get("started_at")) or bool(t.get("current_round_number", 0))
+    return bool(getattr(t, "started_at", "")) or getattr(t, "current_round_number", 0) > 0
+
+
+def _is_finished(t: dict | object) -> bool:
+    """
+    Return True if a tournament is marked finished (has finished_at or
+    status == 'Terminé'), False otherwise.
+
+    Works for both raw dict tournaments and model objects.
+    """
+    if isinstance(t, dict):
+        return bool(t.get("finished_at")) or (t.get("status") == "Terminé")
+    return bool(getattr(t, "finished_at", "")) or getattr(t, "status", "") == "Terminé"
+
+def _as_model(t: Union[dict, object]):
+    """
+    Convert a raw dict or a model-like object to a Tournament model instance.
+    Leaves model as-is if already a Tournament. Minimal conversion for dict.
+    """
+    from chess_manager.models.tournament_models import Tournament
+
+    if isinstance(t, dict):
+        return Tournament.from_dict(t)
+    # If it already quacks like a Tournament (has to_dict), assume it's fine
+    if hasattr(t, "to_dict"):
+        return t
+    # Fallback: try to build from whatever attributes exist
+    return Tournament.from_dict(getattr(t, "__dict__", {}))
+
+
+def _as_dict(t: Union[dict, object]) -> dict:
+    """
+    Normalize a tournament (dict or model) to a dict for persistence.
+    """
+    if isinstance(t, dict):
+        return t
+    if hasattr(t, "to_dict"):
+        return t.to_dict()  # type: ignore[attr-defined]
+    return getattr(t, "__dict__", {})
+
 # ----------------------
 # Tournament operations
 # ----------------------
 def _launch_tournament_flow(
-        repo: TournamentRepository, tournament: dict, controller: PlayerController
+        repo: TournamentRepository, tournament: dict
 ) -> None:
+    """
+    Build a Tournament model from a dict, confirm, create pairings,
+    then run all rounds (with persistence after each step).
+    """
     try:
-        # 2) build model from dict + confirm + create pairings
+        # Build model from dict + confirm + create pairings
         model = launch_first_round_flow(tournament)
     except RuntimeError:
         console.print("Lancement annulé.")
@@ -95,49 +191,104 @@ def _launch_tournament_flow(
         player_views.display_error_message(str(e))
         return
 
-    # 3) persist immediately (round created + exempts scored)
+    # Persist immediately (round created + exempts scored)
     repo.save_tournament(model.to_dict())
 
-    # 4) run scoring loop for all rounds
+    # Run scoring loop for all rounds (resumable if user quits mid-way)
     run_rounds_until_done(model)
 
-    # 5) persist after scoring changes
+    # Persist final state
     repo.save_tournament(model.to_dict())
 
-    # TODO later: show final ranking / winner, etc.
+def _resume_tournament_flow(
+        repo: TournamentRepository, tournament: Union[dict, object]
+) -> None:
+    """
+    Resume an in-progress tournament (not finished). If the last round was
+    partially entered, continue; otherwise start the next round.
+    """
+    model = _as_model(tournament)
+    run_rounds_until_done(model)
+    repo.save_tournament(model.to_dict())
 
 
+def _show_summary(tournament: Union[dict, object]) -> None:
+    """
+    Display the final tournament summary (supports co-winners, as implemented
+    in round_views.display_final_summary).
+    """
+    model = _as_model(tournament)
+    round_views.display_final_summary(model)
+
+
+def _pick_players_from_global(global_players):
+    """
+    Multi-select from global players, returns a list of selected Player objects.
+    Ensures at least 8 are picked.
+    """
+    choices = [
+        questionary.Choice(
+            title=f"{p.last_name.upper()}, {p.first_name} ({p.national_id})",
+            value=p.national_id,
+        )
+        for p in global_players
+    ]
+    picked_ids = questionary.checkbox(
+        "Sélectionnez au moins 8 joueurs :", choices=choices
+    ).ask()
+
+    if not picked_ids or len(picked_ids) < 8:
+        player_views.display_error_message("Vous devez sélectionner au moins 8 joueurs.")
+        return None
+
+    idset = set(picked_ids)
+    return [p for p in global_players if p.national_id in idset]
+
+
+# ---------------------------------------------------------------------
+# Menu for managing one tournament
+# ---------------------------------------------------------------------
 def _manage_tournament_player_menu(
     repo: TournamentRepository, tournament: dict, controller: PlayerController
 ) -> None:
-    """This controls the menu options to either add a player manually or import a players.json
-        in order to populate a tournament with players, add additional players, or change the current player list
     """
-    from chess_manager.models.player_models import Player
-
+    Menu to add players, launch/resume/summary depending on status, or quit.
+    Removed the legacy 'import players.json' option.
+    """
     while True:
-        players_in_tourn = _extract_players_from_tournament(tournament, controller)
+        players_in_tournament = _extract_players_from_tournament(tournament, controller)
+        current_stats = build_player_tournament_index([tournament])
+
         console.print("\n[bold]Joueurs du tournoi actuel :[/bold]")
-        player_views.display_all_players(players_in_tourn)
+        player_views.display_all_players(
+            players_in_tournament,
+            scope="tournament",
+            stats_index=current_stats
+        )
+        console.print()
 
-        choices = [
-            {"name": "1. Ajouter un joueur manuellement", "value": "add"},
-            {"name": "2. Importer un fichier players.json", "value": "import"},
-        ]
+        # --- compute state flags for menu gating (build choices only once)
+        started = _is_started(tournament)
+        finished = _is_finished(tournament)
+        enough = len(players_in_tournament) >= 8
 
-        if len(players_in_tourn) >= 8:
-            choices.append({"name": "3. Lancer le tournoi", "value": "launch"})
-        else:
-            missing = 8 - len(players_in_tourn)
-            choices.append(
-                {
-                    "name": f"3. Lancer le tournoi (requiert {missing} joueur(s) de plus)",
+        choices = [{"name": "1. Ajouter un joueur manuellement", "value": "add"}]
+
+        if not started and not finished:
+            if enough:
+                choices.append({"name": "2. Lancer le tournoi", "value": "launch"})
+            else:
+                missing = 8 - len(players_in_tournament)
+                choices.append({
+                    "name": f"2. Lancer le tournoi (requiert {missing} joueur(s) de plus)",
                     "value": "launch_disabled",
-                }
-            )
+                })
 
-        choices.append({"name": "4. Quitter", "value": "quit"})
-
+        if started and not finished:
+            choices.append({"name": "2. Reprendre la saisie / continuer", "value": "resume"})
+        if finished:
+            choices.append({"name": "2. Voir le récapitulatif", "value": "summary"})
+        choices.append({"name": "3. Quitter", "value": "quit"})
         action = questionary.select("Que souhaitez-vous faire ?", choices=choices).ask()
 
         if action == "add":
@@ -153,73 +304,28 @@ def _manage_tournament_player_menu(
             if not new_player:
                 player_views.display_error_message("Impossible de retrouver le joueur après création.")
                 continue
-            existing_ids = {p.national_id for p in players_in_tourn}
+
+            existing_ids = set([p.national_id for p in players_in_tournament])
             if new_player.national_id not in existing_ids:
                 tournament_players = tournament.get("players", [])
                 tournament_players.append(new_player.to_dict())
                 tournament["players"] = tournament_players
                 repo.save_tournament(tournament)
-                console.print(f"✅ Joueur {new_player.first_name} {new_player.last_name} ajouté au tournoi.")
+                console.print("✅ Joueur {} {} ajouté au tournoi.".format(new_player.first_name, new_player.last_name))
             else:
-                console.print(f"[yellow]Le joueur {new_player.national_id} est déjà dans le tournoi.[/yellow]")
-
-        elif action == "import":
-            # smarter path prompt with fallback
-            path = None
-            try:
-                path = questionary.path(
-                    "Chemin vers un fichier players.json à importer :",
-                    default=os.path.expanduser("~"),
-                ).ask()
-            except TypeError:
-                # older questionary does not support some args; ignore and fallback
-                path = None
-            if not path:
-                path = browse_for_file(start_dir=os.path.expanduser("~"), file_glob="players.json")
-            if not path:
-                console.print("[yellow]Import annulé.[/yellow]")
-                continue
-            if not os.path.isfile(path):
-                player_views.display_error_message("Le fichier sélectionné n'existe pas ou n'est pas un fichier.")
-                continue
-            if os.path.basename(path).lower() != "players.json":
-                confirm = questionary.confirm(
-                    f"Le fichier sélectionné s'appelle '{os.path.basename(path)}'. Continuer quand même ?"
-                ).ask()
-                if not confirm:
-                    continue
-            try:
-                imported_players = Player.load_all_players(path)
-            except Exception as e:
-                player_views.display_error_message(f"Erreur pendant l'import : {e}")
-                continue
-            if not imported_players:
-                player_views.display_error_message("Aucun joueur valide dans le fichier.")
-                continue
-            global_players = controller.load_players()
-            global_ids = {p.national_id for p in global_players}
-            tournament_player_ids = {p.national_id for p in players_in_tourn}
-            added = 0
-            for p in imported_players:
-                if p.national_id not in global_ids:
-                    controller._save_player(p)
-                    global_ids.add(p.national_id)
-                if p.national_id not in tournament_player_ids:
-                    tournament_players = tournament.get("players", [])
-                    tournament_players.append(p.to_dict())
-                    tournament["players"] = tournament_players
-                    tournament_player_ids.add(p.national_id)
-                    added += 1
-            repo.save_tournament(tournament)
-            console.print(f"✅ {added} joueur(s) ajoutés au tournoi via import.")
-            if len(tournament_player_ids) < 8:
-                console.print(f"[yellow]Il manque {8 - len(tournament_player_ids)} joueur(s) pour démarrer.[/yellow]")
+                console.print("[yellow]Le joueur {} est déjà dans le tournoi.[/yellow]".format(new_player.national_id))
 
         elif action == "launch":
-            _launch_tournament_flow(repo, tournament, controller)
+            _launch_tournament_flow(repo, tournament)
 
         elif action == "launch_disabled":
             player_views.display_error_message("Impossible de lancer : il faut au moins 8 joueurs.")
+
+        elif action == "resume":
+            _resume_tournament_flow(repo, tournament)
+
+        elif action == "summary":
+            _show_summary(tournament)
 
         elif action == "quit":
             console.print("✅ Sauvegarde en cours et sortie du menu tournoi...")
@@ -228,120 +334,114 @@ def _manage_tournament_player_menu(
         else:
             player_views.display_error_message("Option invalide.")
 
-
 # ----------------------
 # Entry point (new simplified flow)
 # ----------------------
 def handle_main_menu(controller: PlayerController) -> None:
-    """Entry point menu """
+    """
+    Top-level main menu:
+      - Launch a new tournament with listed players
+      - Create a tournament by selecting players
+      - Create an empty tournament
+      - Manage global players
+      - Select an existing tournament (resume/summary)
+      - Quit
+    """
     tournaments_repo = TournamentRepository()
 
     while True:
-        # Show global players
+        # Show global players + live stats from all tournaments
         global_players = controller.load_players()
+
+        all_tournaments = tournaments_repo.load_all_tournaments()
+        debug_print_tournament_winners(all_tournaments)
+        stats_index = build_player_tournament_index(all_tournaments)
+
         console.print("\n" + "-" * 60)
         console.print("[bold cyan]Joueurs globaux disponibles[/bold cyan]")
         if global_players:
-            player_views.display_all_players(global_players)
+            player_views.display_all_players(
+                global_players,
+                scope="global",
+                stats_index=stats_index
+            )
+            console.print()  # newline so the Questionary prompt appears below the table cleanly
         else:
             console.print("[yellow]Aucun joueur global trouvé. Ajoutez-en ou importez un fichier.[/yellow]")
 
         # Build main choices
         choices = []
         if len(global_players) >= 8:
-            choices.append({"name": "1. Lancer un nouveau tournoi avec les joueurs listés", "value": "launch_with_listed"})
-        choices.extend([
-            {"name": "2. Créer un nouveau tournoi vide et ajouter des joueurs", "value": "create_empty_tournament"},
-            {"name": "3. Importer un fichier players.json pour peupler un nouveau tournoi", "value": "import_and_create"},
-            {"name": "4. Gérer les joueurs globaux (ajouter / modifier)", "value": "manage_global_players"},
-            {"name": "5. Sélectionner un tournoi existant", "value": "select_existing"},
-            {"name": "6. Quitter", "value": "quit"},
-        ])
+            choices.append(
+                {
+                    "name": "1. Lancer un nouveau tournoi avec les joueurs listés",
+                    "value": "launch_with_listed",
+                }
+            )
+        choices.append(
+            {
+                "name": "2. Créer un tournoi en sélectionnant des joueurs",
+                "value": "select_players",
+            }
+        )
+        choices.extend(
+            [
+                {
+                    "name": "3. Créer un nouveau tournoi vide et ajouter des joueurs",
+                    "value": "create_empty_tournament",
+                },
+                {
+                    "name": "4. Gérer les joueurs globaux (ajouter / modifier)",
+                    "value": "manage_global_players",
+                },
+                {"name": "5. Sélectionner un tournoi existant", "value": "select_existing"},
+                {"name": "6. Quitter", "value": "quit"},
+            ]
+        )
 
         action = questionary.select("Que souhaitez-vous faire ?", choices=choices).ask()
 
         if action == "launch_with_listed":
-            location = questionary.text("Lieu du tournoi :").ask()
-            if not location or not location.strip():
-                player_views.display_error_message("Lieu requis pour nom de tournoi.")
+            location = _prompt_location()
+            if not location:
                 continue
-            existing = tournaments_repo.load_all_tournaments()
-            name = generate_tournament_name(location, existing)
-            meta = {
-                "name": name,
-                "location": location.strip(),
-                "players": [p.to_dict() for p in global_players],
-                "created_at": datetime.now().isoformat(),
-            }
-            tournaments_repo.add_tournament(meta)
-            console.print(f"✅ Tournoi '{name}' créé avec les joueurs listés et prêt à être géré.")
-            current_tournament = tournaments_repo.get_tournament_by_name(name)
-            if current_tournament:
-                _manage_tournament_player_menu(tournaments_repo, current_tournament, controller)
+            _create_and_open_tournament(
+                tournaments_repo,
+                location,
+                global_players,
+                controller,
+                "✅ Tournoi '{name}' créé avec les joueurs listés et prêt à être géré."
+            )
+
+        elif action == "select_players":
+            if not global_players or len(global_players) < 8:
+                player_views.display_error_message("Il faut au moins 8 joueurs globaux pour cette option.")
+                continue
+            selected_players = _pick_players_from_global(global_players)
+            if not selected_players:
+                continue
+            location = _prompt_location()
+            if not location:
+                continue
+            _create_and_open_tournament(
+                tournaments_repo,
+                location,
+                selected_players,
+                controller,
+                "✅ Tournoi '{name}' créé avec {count} joueur(s) sélectionné(s)."
+            )
 
         elif action == "create_empty_tournament":
-            # ask for location and create empty tournament
-            location = questionary.text("Lieu du tournoi :").ask()
-            if not location or not location.strip():
-                player_views.display_error_message("Lieu requis pour nom de tournoi.")
+            location = _prompt_location()
+            if not location:
                 continue
-            existing = tournaments_repo.load_all_tournaments()
-            name = generate_tournament_name(location, existing)
-            meta = {
-                "name": name,
-                "location": location.strip(),
-                "players": [],
-                "created_at": datetime.now().isoformat(),
-            }
-            tournaments_repo.add_tournament(meta)
-            console.print(f"✅ Tournoi '{name}' vide créé et prêt à être rempli.")
-            current_tournament = tournaments_repo.get_tournament_by_name(name)
-            if current_tournament:
-                _manage_tournament_player_menu(tournaments_repo, current_tournament, controller)
-
-        elif action == "import_and_create":
-            # import a players.json and create tournament seeded with its players
-            # prompt file
-            path = questionary.path(
-                "Chemin vers un fichier players.json à importer :",
-                only_files=True,
-                default=os.path.expanduser("~"),
-            ).ask()
-            if not path:
-                path = browse_for_file(start_dir=os.path.expanduser("~"), file_glob="players.json")
-            if not path:
-                console.print("[yellow]Import annulé.[/yellow]")
-                continue
-            if not os.path.exists(path):
-                player_views.display_error_message("Le fichier sélectionné n'existe pas.")
-                continue
-            from chess_manager.models.player_models import Player
-
-            try:
-                imported_players = Player.load_all_players(path)
-            except Exception as e:
-                player_views.display_error_message(f"Erreur pendant l'import : {e}")
-                continue
-            if not imported_players:
-                player_views.display_error_message("Le fichier ne contient aucun joueur valide.")
-                continue
-            location = questionary.text("Lieu du tournoi :").ask()
-            if not location or not location.strip():
-                player_views.display_error_message("Lieu requis pour nom de tournoi.")
-                continue
-            existing = tournaments_repo.load_all_tournaments()
-            name = generate_tournament_name(location, existing)
-            meta = {
-                "name": name,
-                "location": location.strip(),
-                "players": [p.to_dict() for p in imported_players],
-                "created_at": datetime.now().isoformat(),
-            }
-            tournaments_repo.add_tournament(meta)
-            console.print(f"✅ Tournoi '{name}' créé avec {len(imported_players)} joueur(s) importés.")
-            current_tournament = tournaments_repo.get_tournament_by_name(name)
-            if current_tournament:
-                _manage_tournament_player_menu(tournaments_repo, current_tournament, controller)
+            _create_and_open_tournament(
+                tournaments_repo,
+                location,
+                [],
+                controller,
+                "✅ Tournoi '{name}' vide créé et prêt à être rempli."
+            )
 
         elif action == "manage_global_players":
             controller.manage_players()
@@ -350,24 +450,12 @@ def handle_main_menu(controller: PlayerController) -> None:
             selected = _select_existing_tournament(tournaments_repo)
             if not selected:
                 continue
-            # if empty, offer to import global players
-            existing_players = _extract_players_from_tournament(selected, controller)
-            if not existing_players and global_players:
-                should_import = questionary.confirm(
-                    f"Le tournoi '{selected.get('name')}' est vide. Importer les {len(global_players)} joueur(s) globaux ?"
-                ).ask()
-                if should_import:
-                    if isinstance(selected, dict):
-                        selected["players"] = [p.to_dict() for p in global_players]
-                    else:
-                        try:
-                            setattr(selected, "players", [p.to_dict() for p in global_players])  # type: ignore
-                        except Exception:
-                            console.print("[red]Impossible d'injecter les joueurs globaux.[/red]")
-                    tournaments_repo.save_tournament(selected)
-            current_tournament = selected
-            if current_tournament:
-                _manage_tournament_player_menu(tournaments_repo, current_tournament, controller)
+
+            # Normalize for the submenu
+            current_tournament = _as_dict(selected)
+            _manage_tournament_player_menu(
+                tournaments_repo, current_tournament, controller
+            )
 
         elif action == "quit":
             console.print("\n👋 Au revoir ! Sauvegarde en cours...")

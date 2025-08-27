@@ -17,7 +17,7 @@ class Player:
     Attributs :
         last_name (str) : Nom de famille du joueur.
         first_name (str) : Prénom du joueur.
-        birth_date (str) : Date de naissance (format YYYY-MM-DD).
+        birthdate (str) : Date de naissance (format YYYY-MM-DD).
         national_id (str) : Identifiant national unique (ex : AB12345).
         date_enrolled (str) : Date d'inscription (format YYYY-MM-DD).
         match_history (list of dictionaries) (format: 'result': 'victoire')

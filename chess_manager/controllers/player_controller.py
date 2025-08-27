@@ -2,9 +2,7 @@ import json
 import os
 import sys
 from typing import List, Optional, Tuple
-
 from rich.console import Console
-
 from chess_manager.models.player_models import Player
 from chess_manager.constants.player_fields import VALIDATION_MAP
 from chess_manager.views import player_views

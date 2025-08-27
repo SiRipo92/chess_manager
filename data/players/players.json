@@ -1,0 +1,164 @@
+[
+  {
+    "last_name": "Armoran",
+    "first_name": "Georgina",
+    "birthdate": "2004-01-01",
+    "national_id": "NL09415",
+    "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Bernard",
+    "first_name": "Quentin",
+    "birthdate": "1990-10-31",
+    "national_id": "UP26163",
+    "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Bernard",
+    "first_name": "Sophie",
+    "birthdate": "1998-07-21",
+    "national_id": "AD00003",
+    "date_enrolled": "2025-03-01",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Chevalier",
+    "first_name": "Alexandre",
+    "birthdate": "1993-10-05",
+    "national_id": "AK00010",
+    "date_enrolled": "2025-08-01",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Dupont",
+    "first_name": "George",
+    "birthdate": "1957-12-13",
+    "national_id": "BG10837",
+    "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Dupont",
+    "first_name": "Marie",
+    "birthdate": "1990-05-12",
+    "national_id": "AB00001",
+    "date_enrolled": "2025-01-15",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Faure",
+    "first_name": "Nicolas",
+    "birthdate": "1982-04-25",
+    "national_id": "AI00008",
+    "date_enrolled": "2025-07-15",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Garnier",
+    "first_name": "Lucie",
+    "birthdate": "2001-06-17",
+    "national_id": "AJ00009",
+    "date_enrolled": "2025-07-20",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Glover",
+    "first_name": "Donjon",
+    "birthdate": "1975-11-04",
+    "national_id": "BA67291",
+    "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Leclerc",
+    "first_name": "Auchan",
+    "birthdate": "1998-02-04",
+    "national_id": "AH37808",
+    "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Leroy",
+    "first_name": "Julien",
+    "birthdate": "1988-09-30",
+    "national_id": "AG00006",
+    "date_enrolled": "2025-06-12",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Martin",
+    "first_name": "Luc",
+    "birthdate": "1985-11-02",
+    "national_id": "AC00002",
+    "date_enrolled": "2025-02-20",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Moreau",
+    "first_name": "Claire",
+    "birthdate": "1992-12-01",
+    "national_id": "AF00005",
+    "date_enrolled": "2025-05-05",
+    "match_history": [],
+    "tournaments_won": 1
+  },
+  {
+    "last_name": "Petit",
+    "first_name": "Antoine",
+    "birthdate": "2000-03-15",
+    "national_id": "AE00004",
+    "date_enrolled": "2025-04-10",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Porter",
+    "first_name": "Joseph",
+    "birthdate": "2010-09-20",
+    "national_id": "PO81738",
+    "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Ronan",
+    "first_name": "Marie",
+    "birthdate": "1975-09-17",
+    "national_id": "TO75612",
+    "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Roux",
+    "first_name": "Elise",
+    "birthdate": "1995-01-08",
+    "national_id": "AH00007",
+    "date_enrolled": "2025-07-01",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Trump",
+    "first_name": "Donald J",
+    "birthdate": "1966-06-13",
+    "national_id": "LO73400",
+    "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  }
+]

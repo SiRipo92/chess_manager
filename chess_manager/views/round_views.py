@@ -1,6 +1,7 @@
 from typing import Optional
 from rich.console import Console
 from rich.table import Table
+from rich.panel import Panel
 from chess_manager.utils.tournament_utils import datetime_formatting
 import questionary
 
@@ -35,40 +36,15 @@ def display_round_results(round):
             p2 = f"{match.player2.last_name.upper()}, {match.player2.first_name} ({match.player2.national_id})"
         else:
             p2 = "EXEMPT"
-        # Prefer the short code if you stored it; otherwise derive from scores
+        # Prefer the short code stored (V-D); otherwise derive from scores
         pair = _result_pair_str(match)
         table.add_row(str(idx), p1, pair, p2)
     console.print(table)
     if round.end_time:
         console.print(f"✅ {round.name} terminé à {datetime_formatting(round.end_time)}.")
 
-def _result_pair_str(match) -> str:
-    # Pair string 'V - D', 'N - N', 'E - ', ...
-    if match.player2 is None:
-        return "E - "  # exempt
-
-    s1 = float(getattr(match, "score1", 0.0) or 0.0)
-    s2 = float(getattr(match, "score2", 0.0) or 0.0)
-
-    if s1 == 1.0 and s2 == 0.0:
-        return "V - D"
-    if s1 == 0.0 and s2 == 1.0:
-        return "D - V"
-    if s1 == 0.5 and s2 == 0.5:
-        return "N - N"
-
-    # fallback if you store codes
-    code1 = getattr(match, "result_code", None) or getattr(match, "result1", None)
-    code2 = getattr(match, "result2", None)
-    if code1 or code2:
-        return f"{(code1 or '').upper()} - {(code2 or '').upper()}"
-
-    return "- - -"
-
 def display_standings(tournament) -> None:
-    """
-    Provisional standings table (can be called during scoring).
-    """
+    """Classement provisoire (peut être appelé après chaque saisie)."""
     table = Table(title=f"Classement provisoire (Round {tournament.current_round_number} / {tournament.number_rounds})")
     table.add_column("Rang", justify="right")
     table.add_column("Joueur")
@@ -85,23 +61,115 @@ def display_standings(tournament) -> None:
 
     console.print(table)
 
-def display_final_summary(tournament):
-    from rich.panel import Panel
-    title = f"🏁 Tournoi terminé : {tournament.repo_name or tournament.name}"
-    subtitle = f"Début: {datetime_formatting(tournament.started_at)}  •  Fin: {datetime_formatting(tournament.finished_at)}"
+# --- Helper ---------------------------------------------------------------
+def perspective_code(player_id: str, rnd) -> str:
+    """Retourne le code V/D/N/E du point de vue du joueur pour un round donné."""
+    for m in rnd.matches:
+        # Exempt?
+        if m.player2 is None:
+            if m.player1 and m.player1.national_id == player_id:
+                return "E"
+            continue
+
+        pid1 = m.player1.national_id
+        pid2 = m.player2.national_id
+        s1 = float(getattr(m, "score1", 0.0) or 0.0)
+        s2 = float(getattr(m, "score2", 0.0) or 0.0)
+
+        if player_id == pid1:
+            if m.result1 is None and m.result2 is None and s1 == 0.0 and s2 == 0.0:
+                return "-"  # pas encore saisi
+            if s1 > s2:
+                return "V"
+            if s1 < s2:
+                return "D"
+            return "N"
+
+        if player_id == pid2:
+            if m.result1 is None and m.result2 is None and s1 == 0.0 and s2 == 0.0:
+                return "-"
+            if s2 > s1:
+                return "V"
+            if s2 < s1:
+                return "D"
+            return "N"
+
+    return "-"  # fallback défensif
+
+
+# --- Main function --------------------------------------------------------
+def display_final_summary(tournament) -> None:
+    """
+    Display a complete tournament recap:
+      - header (name + formatted start/finish)
+      - co-winners if tied on top score
+      - final standings
+      - per-round results matrix (from each player's perspective)
+    """
+    # Header panel
+    title = f"🏁 Tournoi terminé : {getattr(tournament, 'repo_name', '') or tournament.name}"
+    subtitle = (
+        f"Début : {datetime_formatting(getattr(tournament, 'started_at', ''))}  •  "
+        f"Fin : {datetime_formatting(getattr(tournament, 'finished_at', ''))}"
+    )
     console.print(Panel.fit(subtitle, title=title, border_style="green"))
 
-    # Winner = first in standings
-    items = []
-    for p in tournament.players:
-        items.append((tournament.scores.get(p.national_id, 0.0), p))
-    items.sort(key=lambda x: (-x[0], x[1].last_name.lower(), x[1].first_name.lower()))
-    if items:
-        top_score, top_player = items[0]
-        console.print(f"🏆 Vainqueur: [bold]{top_player.first_name} {top_player.last_name}[/bold] ({top_player.national_id}) avec {top_score:.1f} points.\n")
+    # --- Compute standings -------------------------------------------------
+    players = list(tournament.players)
+    scores = {p.national_id: float(tournament.scores.get(p.national_id, 0.0)) for p in players}
 
-    # Full standings
-    display_standings(tournament)
+    players.sort(
+        key=lambda p: (-scores.get(p.national_id, 0.0), p.last_name.lower(), p.first_name.lower())
+    )
+
+    # Winners
+    top_score = scores[players[0].national_id] if players else 0.0
+    winners = [p for p in players if scores[p.national_id] == top_score]
+    if winners:
+        winners_str = ", ".join(
+            f"{w.first_name} {w.last_name} ({w.national_id})" for w in winners
+        )
+        plural = "s" if len(winners) > 1 else ""
+        console.print(
+            f"🏆 Vainqueur{plural} : [bold]{winners_str}[/bold] avec {top_score:.1f} points.\n"
+        )
+
+    # --- Final standings table --------------------------------------------
+    standings = Table(
+        title=f"Classement final (Round {tournament.current_round_number} / {tournament.number_rounds})"
+    )
+    standings.add_column("Rang", justify="right")
+    standings.add_column("Joueur")
+    standings.add_column("ID")
+    standings.add_column("Score", justify="right")
+
+    for idx, p in enumerate(players, start=1):
+        standings.add_row(
+            str(idx),
+            f"{p.last_name.upper()}, {p.first_name}",
+            p.national_id,
+            f"{scores[p.national_id]:.1f}",
+        )
+    console.print(standings)
+
+    # --- Per-round results matrix -----------------------------------------
+    rounds = list(getattr(tournament, "rounds", []))
+    if rounds:
+        matrix = Table(title="Résultats par round (perspective joueur)")
+        matrix.add_column("Joueur")
+        for i, _ in enumerate(rounds, start=1):
+            matrix.add_column(f"R{i}", justify="center")
+        matrix.add_column("Total", justify="right")
+
+        for p in players:
+            row = [f"{p.last_name.upper()}, {p.first_name} ({p.national_id})"]
+            for rnd in rounds:
+                row.append(perspective_code(p.national_id, rnd))  # <- 🔑 call helper here
+            row.append(f"{scores[p.national_id]:.1f}")
+            matrix.add_row(*row)
+
+        console.print(matrix)
+
 
 def display_match_progress(round_no: int, total_rounds: int, remaining: int, total: int) -> None:
     """Affiche un résumé de progression du round."""
@@ -112,8 +180,8 @@ def display_match_progress(round_no: int, total_rounds: int, remaining: int, tot
 
 def prompt_select_match_to_score(rnd: Round) -> Optional[int]:
     """
-    Propose la liste des matches sans résultat pour saisie.
-    Retourne l’index du match à noter (0-based) ou None si annulé.
+    Liste des matches sans résultat pour sélection.
+    Retourne l’index (0-based) ou None si annulé/terminé.
     """
     choices = []
     for idx, m in enumerate(rnd.matches):
@@ -134,3 +202,37 @@ def prompt_select_match_to_score(rnd: Round) -> Optional[int]:
 def announce_round_closed(rnd: Round) -> None:
     """Message de clôture d’un round."""
     console.print(f"✅ {rnd.name} terminé à {rnd.end_time}.")
+
+# -----------------------
+# Helpers (views only)
+# -----------------------
+
+def _name_id(player) -> str:
+    return f"{player.last_name.upper()}, {player.first_name} ({player.national_id})"
+
+
+def _result_pair_str(match) -> str:
+    """
+    Renvoie 'V - D', 'N - N', 'E - ', etc.
+    Déduit à partir des scores si nécessaire.
+    """
+    if match.player2 is None:
+        return "E - "  # exempt
+
+    s1 = float(getattr(match, "score1", 0.0) or 0.0)
+    s2 = float(getattr(match, "score2", 0.0) or 0.0)
+
+    if s1 == 1.0 and s2 == 0.0:
+        return "V - D"
+    if s1 == 0.0 and s2 == 1.0:
+        return "D - V"
+    if s1 == 0.5 and s2 == 0.5:
+        return "N - N"
+
+    # fallback si vous stockez des codes
+    code1 = (getattr(match, "result_code", None) or getattr(match, "result1", None) or "").upper()
+    code2 = (getattr(match, "result2", None) or "").upper()
+    if code1 or code2:
+        return f"{code1} - {code2}"
+
+    return "- - -"
