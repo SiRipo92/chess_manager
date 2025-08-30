@@ -1,7 +1,7 @@
 # ♟️ Chess Tournament Manager (Offline CLI - Python)
-
-This project is an offline, console-based chess tournament manager built with Python using the MVC (Model-View-Controller) design pattern. It allows club managers to create and run chess tournaments, track players, scores, and generate tournament reports.
-
+<br>[![Flake8](https://github.com/SiRipo92/chess_manager/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/SiRipo92/chess_manager/actions/workflows/lint.yml)
+<br>[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p>This project is an offline, console-based chess tournament manager built with Python using the MVC (Model-View-Controller) design pattern. It allows club managers to create and run chess tournaments, track players, scores, and generate tournament reports.
 ## 📁 Project Structure
 
 ```bash
@@ -22,7 +22,7 @@ chess_manager/                  # Project root
 ├── main.py                    # CLI entry point
 ├── requirements.txt           # Python dependencies
 ├── .gitignore
-├── flake8_rapport/            # HTML report output from flake8
+├── flake8_report/             # HTML report output from flake8
 ├── setup.cfg                  # Configuration for flake8 and coverage
 ├── .github/                   # Linting CI via GitHub Actions
 ```
@@ -153,7 +153,13 @@ TournamentController — launching rounds, entering/correcting results, provisio
   - ```
 
 ## 📋 License
-MIT License or School Submission — to be specified.
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
+
+Copyright (c) 2025 Sierra Ripoche
+
+If you use or modify this software, you must keep the above copyright notice
+and this license text in copies or substantial portions of the software.
 
 # Author
 Sierra Ripoche
