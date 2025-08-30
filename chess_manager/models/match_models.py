@@ -20,7 +20,7 @@ class Match:
 
     def __init__(self, player1: Player, player2: Optional[Player], is_exempt: bool = False) -> None:
         self.player1 = player1
-        self.player2 = player2 # Will be "none" if exempt
+        self.player2 = player2   # Will be "none" if exempt
 
         # Scores numériques
         self.score1: float = 0.0

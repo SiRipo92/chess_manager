@@ -2,12 +2,12 @@ from typing import Optional
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
-from chess_manager.utils.tournament_utils import datetime_formatting
 import questionary
-
+from chess_manager.utils.tournament_utils import datetime_formatting
 from chess_manager.models.round_models import Round
 
 console = Console()
+
 
 def display_round_pairings(rnd: Round) -> None:
     """Affiche la table d’appariements d’un round (noms + IDs)."""
@@ -18,10 +18,12 @@ def display_round_pairings(rnd: Round) -> None:
 
     for i, m in enumerate(rnd.matches, start=1):
         p1 = f"{m.player1.last_name.upper()}, {m.player1.first_name} ({m.player1.national_id})"
-        p2 = "EXEMPT" if m.player2 is None else f"{m.player2.last_name.upper()}, {m.player2.first_name} ({m.player2.national_id})"
+        p2 = "EXEMPT" if m.player2 is None \
+            else f"{m.player2.last_name.upper()}, {m.player2.first_name} ({m.player2.national_id})"
         table.add_row(str(i), p1, p2)
 
     console.print(table)
+
 
 def display_round_results(round):
     """Show results table for the round (after inputs)."""
@@ -43,9 +45,12 @@ def display_round_results(round):
     if round.end_time:
         console.print(f"✅ {round.name} terminé à {datetime_formatting(round.end_time)}.")
 
+
 def display_standings(tournament) -> None:
-    """Classement provisoire (peut être appelé après chaque saisie)."""
-    table = Table(title=f"Classement provisoire (Round {tournament.current_round_number} / {tournament.number_rounds})")
+    """Provisional ranking (called again after each confirmed input for round)."""
+    table = Table(
+        title=f"Classement provisoire (Round {tournament.current_round_number} / {tournament.number_rounds})"
+    )
     table.add_column("Rang", justify="right")
     table.add_column("Joueur")
     table.add_column("ID")
@@ -62,8 +67,12 @@ def display_standings(tournament) -> None:
     console.print(table)
 
 # --- Helper ---------------------------------------------------------------
+
+
 def perspective_code(player_id: str, rnd) -> str:
-    """Retourne le code V/D/N/E du point de vue du joueur pour un round donné."""
+    """
+    Returns le abbreviated 'V', 'D', 'N', or 'E' codes for each player per round.
+    """
     for m in rnd.matches:
         # Exempt?
         if m.player2 is None:
@@ -98,6 +107,7 @@ def perspective_code(player_id: str, rnd) -> str:
 
 
 # --- Main function --------------------------------------------------------
+
 def display_final_summary(tournament) -> None:
     """
     Display a complete tournament recap:
@@ -172,16 +182,16 @@ def display_final_summary(tournament) -> None:
 
 
 def display_match_progress(round_no: int, total_rounds: int, remaining: int, total: int) -> None:
-    """Affiche un résumé de progression du round."""
+    """Display a round progress summary (number of missing match inputs per round)"""
     console.print(
         f"[bold]Tournoi en cours (Round {round_no} / {total_rounds}).[/bold] "
         f"Il manque les résultats de {remaining} / {total} match(es)."
     )
 
+
 def prompt_select_match_to_score(rnd: Round) -> Optional[int]:
     """
-    Liste des matches sans résultat pour sélection.
-    Retourne l’index (0-based) ou None si annulé/terminé.
+    List of matches without results that make a dynamic menu, where each match missing results can be selected
     """
     choices = []
     for idx, m in enumerate(rnd.matches):
@@ -199,13 +209,15 @@ def prompt_select_match_to_score(rnd: Round) -> Optional[int]:
     choices.append({"name": "Terminer plus tard / Annuler", "value": None})
     return questionary.select("Sélectionnez un match à saisir :", choices=choices).ask()
 
+
 def announce_round_closed(rnd: Round) -> None:
-    """Message de clôture d’un round."""
+    """Message to announce the end of a round and it's registered close time"""
     console.print(f"✅ {rnd.name} terminé à {rnd.end_time}.")
 
 # -----------------------
 # Helpers (views only)
 # -----------------------
+
 
 def _name_id(player) -> str:
     return f"{player.last_name.upper()}, {player.first_name} ({player.national_id})"

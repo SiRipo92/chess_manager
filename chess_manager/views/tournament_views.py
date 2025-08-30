@@ -54,7 +54,8 @@ def prompt_select_match_to_score(round_obj: Round) -> Optional[int]:
         if m.result1 is not None or (m.player2 is None):
             continue
         p1 = f"{m.player1.last_name.upper()}, {m.player1.first_name} ({m.player1.national_id})"
-        p2 = f"{m.player2.last_name.upper()}, {m.player2.first_name} ({m.player2.national_id})" if m.player2 else "EXEMPT"
+        p2 = f"{m.player2.last_name.upper()}, {m.player2.first_name} ({m.player2.national_id})" \
+            if m.player2 else "EXEMPT"
         choices.append({"name": f"{idx+1}. {p1}  vs  {p2}", "value": idx})
 
     if not choices:
@@ -150,6 +151,7 @@ def _per_round_code_for(player_id: str, rnd) -> str:
             return (getattr(m, "result2", "") or "").upper()
     return ""
 
+
 def display_final_standings(tournament) -> list:
     """
     Prints final standings and returns the sorted player list (for reuse).
@@ -169,6 +171,7 @@ def display_final_standings(tournament) -> list:
 
     console.print(table)
     return players
+
 
 def display_tournament_recap(tournament) -> None:
     """

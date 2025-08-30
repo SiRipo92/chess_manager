@@ -34,6 +34,7 @@ def launch_first_round_flow(tournament_dict: Dict) -> Tournament:
     display_round_pairings(first_round)
     return model
 
+
 def run_rounds_until_done(model: Tournament, repo=None) -> None:
     """
     Score the current round, then keep creating/scoring next rounds until done.
@@ -61,4 +62,3 @@ def run_rounds_until_done(model: Tournament, repo=None) -> None:
         except Exception:
             console.print("[red]Échec de la sauvegarde du tournoi finalisé.[/red]")
     display_tournament_recap(model)
-

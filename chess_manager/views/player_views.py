@@ -113,6 +113,7 @@ def display_player_brief_info(player: Player) -> None:
         table.add_row(label, str(value))
     console.print(table)
 
+
 def display_all_players(players, scope="global", stats_index=None, show_enrollment=False):
     """Affiche les joueurs (stats facultatives via stats_index)."""
     if not players:
@@ -160,6 +161,8 @@ def display_all_players(players, scope="global", stats_index=None, show_enrollme
 # --------------------
 # Menu
 # --------------------
+
+
 def show_player_main_menu() -> str:
     """
     Retourne :

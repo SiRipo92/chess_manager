@@ -6,23 +6,25 @@ from chess_manager.models.player_models import Player
 from chess_manager.models.round_models import Round
 from chess_manager.models.match_models import Match
 
+
 class Tournament:
     """
-    Représente un tournoi d'échecs.
+    Chess tournament domain model.
 
-    Attributs principaux :
-        location (str)
-        start_date (str, YYYY-MM-DD)  -> fixé au lancement
-        end_date (str, YYYY-MM-DD)    -> fixé à la fin
-        started_at (str, ISO)         -> timestamp précis du lancement
-        finished_at (str, ISO)        -> timestamp précis de fin
-        description (str)
-        number_rounds (int)
-        current_round_number (int)
-        players (List[Player])
-        rounds (List[Round])
-        scores (Dict[national_id,float])
-        past_pairs (Set[FrozenSet[str]])
+    Attributes:
+        location: Tournament location (free text).
+        start_date: 'YYYY-MM-DD'. Set when the tournament is launched.
+        end_date: 'YYYY-MM-DD'. Set when the tournament is finished.
+        started_at: ISO datetime timestamp set at launch (precise time).
+        finished_at: ISO datetime timestamp set when finished.
+        description: Free text description.
+        number_rounds: Planned number of rounds (default 4).
+        current_round_number: 0 before start, increases as rounds are created.
+        players: Roster for this tournament (Player instances).
+        rounds: List of Round objects as they are created/closed.
+        scores: Map national_id -> accumulated points for *this* tournament.
+        past_pairs: Set of frozensets of two national_ids already paired.
+        repo_name: Persistent display/name used by the repository layer.
     """
     def __init__(
             self,
@@ -32,11 +34,21 @@ class Tournament:
             description: str = "",
             number_rounds: int = 4,
     ) -> None:
+        """
+        Initialize a new Tournament instance (not started yet).
+
+        Args:
+            location: Human-readable location.
+            start_date: YYYY-MM-DD (optional). Typically filled at launch.
+            end_date: YYYY-MM-DD (optional). Filled at finish time.
+            description: Optional free text.
+            number_rounds: Planned number of rounds (default 4).
+        """
         self.location = location
-        self.start_date = start_date or ""   # ex: "2025-08-10" (au lancement)
-        self.end_date = end_date or ""       # défini à la fin
-        self.started_at: str = ""            # ex: "2025-08-10T14:32:05.123456"
-        self.finished_at: str = ""           # idem à la fin
+        self.start_date = start_date or ""   # e.g. "2025-08-10" (at launch)
+        self.end_date = end_date or ""       # set when finished
+        self.started_at: str = ""            # ex: e.g. "2025-08-10T14:32:05.123456"
+        self.finished_at: str = ""           # set when finished
         self.description = description
         self.number_rounds = number_rounds
 
@@ -47,14 +59,18 @@ class Tournament:
         self.scores: Dict[str, float] = {}
         self.past_pairs: Set[FrozenSet[str]] = set()
 
-        # NEW: keep the repository's display name (e.g., "tournament_1_nanterre_2025-08-15")
+        # Repository-facing persisted name (e.g., "tournament_1_nanterre_2025-08-15")
         self.repo_name: str = ""
 
     @property
     def status(self) -> str:
         """
-        'En cours' si lancé et pas fini ; 'Terminé' si finished_at présent ;
-        sinon 'En attente' avant lancement.
+        Human-friendly status label.
+
+        Returns:
+            "Terminé" if finished_at is set;
+            "En cours" if started_at is set but finished_at is empty;
+            "En attente" otherwise (not started yet).
         """
         if self.finished_at:
             return "Terminé"
@@ -62,37 +78,70 @@ class Tournament:
             return "En cours"
         return "En attente"
 
-
     @property
     def name(self) -> str:
         """
-        Génère automatiquement le nom du tournoi à partir du lieu et de la date.
-        Exemple : "Paris_2025-07-01"
+        Computed, human-friendly name (location + start_date).
+
+        Returns:
+            A string like "Paris_2025-07-01".
         """
         return f"{self.location}_{self.start_date}"
 
     @property
     def registration_open(self) -> bool:
+        """
+        Whether registration is open (no round started yet).
+
+        Returns:
+            True if current_round_number == 0, else False.
+        """
         return self.current_round_number == 0
 
     def has_player(self, national_id: str) -> bool:
+        """
+        Check if a player (by ID) is already on the roster.
+
+        Args:
+            national_id: Player national ID.
+
+        Returns:
+            True if present, else False.
+        """
         return any(p.national_id == national_id for p in self.players)
 
     def roster_size(self) -> int:
-        return len(self.players)
+        """
+        Number of players currently in the tournament roster.
 
+        Returns:
+            Roster size as an integer.
+        """
+        return len(self.players)
 
     # --- lifecycle helpers -------------------------------------------------
 
     def mark_launched(self) -> None:
-        """À appeler au lancement (dans start_first_round)."""
+        """
+        Mark the tournament as launched.
+
+        Side Effects:
+            - Sets start_date to today's date if missing.
+            - Sets started_at to now (seconds precision) if missing.
+        """
         if not self.start_date:
             self.start_date = date.today().isoformat()
         if not self.started_at:
             self.started_at = datetime.now().isoformat(timespec="seconds")
 
     def mark_finished(self) -> None:
-        """À appeler quand le dernier tour est terminé."""
+        """
+        Mark the tournament as finished.
+
+        Side Effects:
+            - Sets end_date to today's date if missing.
+            - Sets finished_at to now (seconds precision) if missing.
+        """
         if not self.end_date:
             self.end_date = date.today().isoformat()
         if not self.finished_at:
@@ -102,13 +151,20 @@ class Tournament:
     # Inscription des joueurs
     # -------------------------
 
-
     def add_player(self, player: Player) -> None:
         """
-        Inscrit un joueur à CE tournoi (pas au registre global).
-        Règles :
-        - pas de doublon,
-        - inscription fermée si un tour a déjà commencé.
+        Add a Player object to this tournament.
+
+        Rules:
+            - Fails if registration is closed (a round has already started).
+            - Fails if the player is already on the roster.
+            - Initializes this player's score in `scores` to 0.0.
+
+        Args:
+            player: Player instance to add.
+
+        Raises:
+            ValueError: If registration is closed or the player is duplicated.
         """
         if not self.registration_open:
             raise ValueError("Inscription fermée : le tournoi a déjà commencé.")
@@ -120,26 +176,66 @@ class Tournament:
 
     # If you prefer to keep the tournament storing only IDs:
     def add_player_id(self, national_id: str, lookup: dict[str, Player]) -> None:
+        """
+        Add a player by ID using a provided lookup.
+
+        Rules:
+            - Same as `add_player` regarding registration and duplicates.
+
+        Args:
+            national_id: Player national ID.
+            lookup: Mapping of national_id -> Player.
+
+        Raises:
+            ValueError: If registration is closed or the player is duplicated.
+            KeyError: If `national_id` is not found in `lookup`.
+        """
         if not self.registration_open:
             raise ValueError("Inscription fermée : le tournoi a déjà commencé.")
         if self.has_player(national_id):
             raise ValueError("Joueur déjà inscrit à ce tournoi.")
         self.players.append(lookup[national_id])
 
-
     # ----------------------
     # Génération des tours
     # ----------------------
+
     def _validate_roster_before_launch(self) -> None:
-        """Assure au moins 8 joueurs et des identifiants uniques."""
+        """
+        Validate roster constraints before starting round 1.
+
+        Ensures:
+            - At least 8 players.
+            - No duplicate national IDs.
+
+        Raises:
+            ValueError: If constraints are not satisfied.
+        """
         if self.roster_size() < 8:
             raise ValueError("Il faut au moins 8 joueurs pour démarrer un tournoi.")
         ids = [p.national_id for p in self.players]
         if len(set(ids)) != len(ids):
             raise ValueError("Des identifiants joueurs en double ont été détectés.")
 
-
     def start_first_round(self) -> Round:
+        """
+        Launch the tournament and create the first round with random pairings.
+
+        Behavior:
+            - Validates roster (min 8, no duplicates).
+            - Sets launch timestamps if needed.
+            - Creates Round #1.
+            - Shuffles players and pairs them.
+            - If odd roster, the last player gets an automatic "exempt" match (1.0).
+            - Applies points for the exempt match immediately.
+            - Appends the round to `rounds`, sets `current_round_number` to 1.
+
+        Returns:
+            The created Round object.
+
+        Raises:
+            ValueError: If the tournament has already started or roster invalid.
+        """
         if self.current_round_number != 0:
             raise ValueError("Le tournoi a déjà démarré.")
         self._validate_roster_before_launch()
@@ -170,6 +266,24 @@ class Tournament:
         return round
 
     def start_next_round(self) -> Round:
+        """
+        Create the next round using Swiss-like pairing based on current scores.
+
+        Behavior:
+            - Requires the tournament to have started and not exceed `number_rounds`.
+            - Sorts players by score descending; shuffles inside same-score buckets.
+            - If odd count, last ID becomes exempt (earns 1.0 automatically).
+            - Avoids repeating past pairs when possible via `_find_partner`.
+            - Applies points for any exempt match immediately.
+            - Appends the round to `rounds`, increments `current_round_number`.
+
+        Returns:
+            The created Round object.
+
+        Raises:
+            ValueError: If tournament not started or maximum rounds reached.
+            KeyError: If a player ID cannot be resolved (should not happen with valid roster).
+        """
         if self.current_round_number == 0:
             raise ValueError("Le tournoi n’a pas encore démarré. Lancez d’abord le 1er tour.")
         if self.current_round_number >= self.number_rounds:
@@ -217,13 +331,29 @@ class Tournament:
         return round
 
     def update_scores_from_round(self, tournament_round: Round) -> None:
+        """
+        Accumulate scores from the given round into the tournament `scores`.
+
+        Args:
+            tournament_round: Round whose matches have (final) scores.
+
+        Side Effects:
+            Mutates `self.scores` in place by adding match points.
+        """
         for match in tournament_round.matches:
             self._apply_match_points(match)
 
     # --------------
     # Sérialisation
     # --------------
+
     def to_dict(self) -> Dict:
+        """
+        Serialize the tournament to a JSON-safe dictionary.
+
+        Returns:
+            Dict with primitive types only (nested players/rounds also serialized).
+        """
         return {
             "name": self.repo_name or self.name,  # << ensure repo can upsert
             "location": self.location,
@@ -243,6 +373,19 @@ class Tournament:
 
     @classmethod
     def from_dict(cls, data: Dict) -> "Tournament":
+        """
+        Reconstruct a Tournament object from a dictionary.
+
+        Args:
+            data: Dictionary produced by `to_dict()` (or the repository file).
+
+        Returns:
+            A Tournament instance populated with players, rounds, scores, pairs.
+
+        Notes:
+            - Uses 'created_at'[:10] as a fallback for 'start_date' when missing.
+            - Players are rebuilt first to allow Round reconstruction with lookups.
+        """
         start_date = data.get("start_date") or (data.get("created_at") or "")[:10]
         tournament = cls(
             location=data["location"],
@@ -290,22 +433,55 @@ class Tournament:
     # =======================
 
     def _player_by_id(self, national_id: str) -> Player:
+        """
+        Resolve a Player instance by national ID from the current roster.
+
+        Args:
+            national_id: Player national ID.
+
+        Returns:
+            The Player instance.
+
+        Raises:
+            KeyError: If the ID is not found in the current roster.
+        """
         for p in self.players:
             if p.national_id == national_id:
                 return p
         raise KeyError(f"Joueur introuvable : {national_id}")
 
     def _remember_pair(self, id1: str, id2: str) -> None:
-        """Enregistre une paire jouée dans l’historique des confrontations."""
+        """
+        Record that two players have already been paired in this tournament.
+
+        Args:
+            id1: National ID of player 1.
+            id2: National ID of player 2.
+
+        Side Effects:
+            Adds a frozenset({id1, id2}) to `past_pairs`.
+        """
         self.past_pairs.add(frozenset((id1, id2)))
 
     def _have_played_before(self, id1: str, id2: str) -> bool:
+        """
+        Check if two players have previously been paired.
+
+        Args:
+            id1: National ID of player 1.
+            id2: National ID of player 2.
+
+        Returns:
+            True if the pair exists in `past_pairs`, else False.
+        """
         return frozenset((id1, id2)) in self.past_pairs
 
     def _sorted_player_ids_by_score(self) -> List[str]:
         """
-        Retourne les IDs triés par score décroissant.
-        Mélange légèrement les égalités pour éviter des appariements répétitifs.
+        Return player IDs sorted by current score (desc), shuffling within ties.
+
+        Returns:
+            List of national IDs ordered for Swiss-like pairing.
         """
         # groupe par score
         buckets: Dict[float, List[str]] = {}
@@ -324,10 +500,21 @@ class Tournament:
 
     def _find_partner(self, p1_id: str, sorted_ids: List[str], used: Set[str]) -> Optional[str]:
         """
-        Cherche un partenaire compatible (pas déjà joué) en balayant la liste
-        depuis la position de p1_id + 1.
+        Find a compatible partner for p1_id scanning forward in sorted_ids.
+
+        Strategy:
+            - Skip IDs already used in this round.
+            - Prefer someone who hasn't played with p1_id before.
+            - Returns the first compatible partner found.
+
+        Args:
+            p1_id: National ID of the first player.
+            sorted_ids: Ordered list produced by `_sorted_player_ids_by_score`.
+            used: Set of IDs already assigned in the current round.
+
+        Returns:
+            The partner national ID, or None if none found.
         """
-        # trouve l’indice de p1 dans sorted_ids
         try:
             start_idx = sorted_ids.index(p1_id) + 1
         except ValueError:
@@ -342,8 +529,16 @@ class Tournament:
 
     def _apply_match_points(self, match: Match) -> None:
         """
-        Ajoute les points d’un match aux scores du tournoi.
-        Si 'exempt', le match contient déjà le score du joueur 1.
+        Add match points into the tournament `scores`.
+
+        Notes:
+            - For an exempt match (player2 is None), score1 is already set (1.0).
+
+        Args:
+            match: Match instance with score1/score2 finalized.
+
+        Side Effects:
+            Mutates `self.scores` to add score1 (and score2 if applicable).
         """
         id1 = match.player1.national_id
         self.scores[id1] = self.scores.get(id1, 0.0) + float(match.score1 or 0.0)

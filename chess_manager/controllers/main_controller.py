@@ -121,6 +121,7 @@ def _status_label_plain(t: dict | object) -> str:
         return "Non démarré"
     return f"En cours {pct}%"
 
+
 def _select_existing_tournament(repo: TournamentRepository) -> Optional[dict]:
     """Allows user to select from an existing tournament
         -- can be built out more later to view, sort, filter and modify tournament objects
@@ -210,6 +211,7 @@ def _is_finished(t: dict | object) -> bool:
         return bool(t.get("finished_at")) or (t.get("status") == "Terminé")
     return bool(getattr(t, "finished_at", "")) or getattr(t, "status", "") == "Terminé"
 
+
 def _as_model(t: Union[dict, object]):
     """
     Convert a raw dict or a model-like object to a Tournament model instance.
@@ -239,6 +241,8 @@ def _as_dict(t: Union[dict, object]) -> dict:
 # ----------------------
 # Tournament operations
 # ----------------------
+
+
 def _launch_tournament_flow(
         repo: TournamentRepository, tournament: dict
 ) -> None:
@@ -264,6 +268,7 @@ def _launch_tournament_flow(
 
     # Persist final state
     repo.save_tournament(model.to_dict())
+
 
 def _resume_tournament_flow(
         repo: TournamentRepository, tournament: Union[dict, object]
@@ -412,9 +417,12 @@ def _manage_tournament_player_menu(
         else:
             player_views.display_error_message("Option invalide.")
 
+
 # ----------------------
 # Entry point (new simplified flow)
 # ----------------------
+
+
 def handle_main_menu(controller: PlayerController) -> None:
     """
     Top-level main menu:

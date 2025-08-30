@@ -1,6 +1,7 @@
 import questionary
 from typing import Optional
 
+
 def prompt_result_for_match() -> Optional[str]:
     """
     Demande un résultat pour le joueur 1 du match.

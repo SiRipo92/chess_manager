@@ -1,6 +1,5 @@
 from __future__ import annotations
 from rich.console import Console
-from typing import Optional
 import questionary
 from datetime import datetime
 from chess_manager.models.tournament_models import Tournament
@@ -190,8 +189,9 @@ def _rollback_points(tournament: Tournament, match: Match) -> None:
         s2 = float(getattr(match, "score2", 0.0) or 0.0)
         tournament.scores[id2] = tournament.scores.get(id2, 0.0) - s2
 
+
 def _count_pending_matches(rnd: Round) -> int:
-    """Matches à résultat manquant (hors exempts)."""
+    """Matches with missing results (excluding byes)."""
     n = 0
     for m in rnd.matches:
         if m.player2 is None:

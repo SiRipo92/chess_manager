@@ -6,7 +6,8 @@ from rich.console import Console
 
 console = Console()
 
-def datetime_formatting(timestamp:str | None):
+
+def datetime_formatting(timestamp: str | None):
     """Format the timestamp in a readable format"""
     if not timestamp:
         return ""
@@ -14,7 +15,7 @@ def datetime_formatting(timestamp:str | None):
         # Works with 'YYYY-MM-DDTHH:MM:SS' and with microseconds
         datetime_obj = datetime.fromisoformat(timestamp)
         return datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
-    except Exception:
+    except (ValueError, TypeError):
         # if already friendly, just return
         return timestamp.replace("T", " ")
 
