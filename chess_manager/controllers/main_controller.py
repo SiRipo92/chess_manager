@@ -325,6 +325,13 @@ def _manage_tournament_player_menu(
     Menu to add players (only before start), launch/resume/summary depending on status, or quit.
     """
     while True:
+        # Refresh from repo every loop so we never use a stale dict
+        name = tournament.get("name", "")
+        if name:
+            fresh = repo.get_tournament_by_name(name)
+            if fresh:
+                tournament = _as_dict(fresh)
+
         players_in_tournament = _extract_players_from_tournament(tournament, controller)
         current_stats = build_player_tournament_index([tournament])
 
@@ -400,15 +407,25 @@ def _manage_tournament_player_menu(
 
         elif action == "launch":
             _launch_tournament_flow(repo, tournament)
+            # reload the latest snapshot
+            fresh = repo.get_tournament_by_name(tournament.get("name", ""))
+            if fresh:
+                tournament = _as_dict(fresh)
 
         elif action == "launch_disabled":
             player_views.display_error_message("Impossible de lancer : il faut au moins 8 joueurs.")
 
         elif action == "resume":
             _resume_tournament_flow(repo, tournament)
+            fresh = repo.get_tournament_by_name(tournament.get("name", ""))
+            if fresh:
+                tournament = _as_dict(fresh)
 
         elif action == "summary":
             _show_summary(tournament)
+            fresh = repo.get_tournament_by_name(tournament.get("name", ""))
+            if fresh:
+                tournament = _as_dict(fresh)
 
         elif action == "quit":
             console.print("✅ Sauvegarde en cours et sortie du menu tournoi...")
