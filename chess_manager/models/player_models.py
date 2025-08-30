@@ -12,16 +12,16 @@ from chess_manager.utils.match_validators import is_valid_match_result_code
 
 class Player:
     """
-    Représente un joueur d'échecs dans le système.
+    Represents a chess player.
 
-    Attributs :
-        last_name (str) : Nom de famille du joueur.
-        first_name (str) : Prénom du joueur.
-        birthdate (str) : Date de naissance (format YYYY-MM-DD).
-        national_id (str) : Identifiant national unique (ex : AB12345).
-        date_enrolled (str) : Date d'inscription (format YYYY-MM-DD).
-        match_history (list of dictionaries) (format: 'result': 'victoire')
-        tournaments_won(): integer (ex. 1)
+    Attributes:
+        last_name (str): Player's last name.
+        first_name (str): Player's first name.
+        birthdate (str): Date of birth in YYYY-MM-DD format.
+        national_id (str): Unique national identifier (e.g., AB12345).
+        date_enrolled (str): Enrollment date in YYYY-MM-DD format.
+        match_history (list[dict]): List of match records, each as {"match": str, "résultat": "victoire|défaite|nul"}.
+        tournaments_won (int): Count of tournaments won (including ties for first).
     """
 
     # ===========================
@@ -31,9 +31,10 @@ class Player:
     def __init__(self, last_name: str, first_name: str, birthdate: str, national_id: str, match_history=None,
                  tournaments_won=0) -> None:
         """
-        Initialise une instance de joueur avec validation des champs principaux.
+        Initialize a Player instance and validate core fields.
+        Raises ValueError with French messages if any field is invalid.
         """
-        # Validation de chaque champ via les fonctions définies dans VALIDATION_MAP
+        # Validate using functions defined in VALIDATION_MAP (display text remains French)
         if not VALIDATION_MAP["Nom de famille"](last_name):
             raise ValueError("Nom de famille invalide.")
         if not VALIDATION_MAP["Prénom"](first_name):
@@ -43,7 +44,7 @@ class Player:
         if not VALIDATION_MAP["Identifiant national"](national_id):
             raise ValueError("Identifiant national invalide.")
 
-        # Normalisation des champs texte
+        # Normalize text fields (code comments in English, UI/errors remain French)
         self.last_name = last_name.strip().title()
         self.first_name = first_name.strip().title()
         self.birthdate = birthdate
@@ -55,7 +56,7 @@ class Player:
     @property
     def age(self) -> int:
         """
-        Calcule l'âge du joueur à partir de sa date de naissance.
+        Compute age in whole years from birthdate.
         """
         birth = datetime.strptime(self.birthdate, DATE_FORMAT)
         today = datetime.today()
@@ -67,23 +68,21 @@ class Player:
 
     def record_match_result(self, match_name: str, result_code: str) -> None:
         """
-        Enregistre un résultat de match pour le joueur.
+        Append a match result to the player's history.
 
-        Paramètres :
-            match_name (str) : Nom ou identifiant du match.
-            result_code (str) : Code de résultat ('V', 'D', 'N').
+        Args:
+            match_name (str): Match label or identifier.
+            result_code (str): One-letter code 'V'|'D'|'N' (victoire|défaite|nul).
         """
-        # Normalisation : on met en majuscules et supprime les espaces
+        # Normalize the code then validate ('V', 'D', 'N')
         normalized_code = result_code.strip().upper()
-
-        # Vérification si le code est valide ('V', 'D' ou 'N')
         if not is_valid_match_result_code(normalized_code):
             raise ValueError("Code de résultat invalide. Utilisez 'V', 'D' ou 'N'.")
 
-        # Conversion en libellé standardisé ('victoire', 'défaite', 'nul')
+        # Translate the code to the canonical French label used in storage
         result_label = MATCH_RESULT_CODES[normalized_code]
 
-        # Enregistrement du résultat dans l'historique du joueur
+        # Persist the record in French to keep JSON consistent
         self.match_history.append({
             "match": match_name,
             "résultat": result_label
@@ -91,36 +90,38 @@ class Player:
 
     def record_tournament_win(self):
         """
-        Increases the count of tournaments won
+        Increase the count of tournaments won (includes ties for first place).
         """
         self.tournaments_won += 1
 
     def get_total_score(self) -> float:
         """
-        Calcule le score total du joueur (tous tournois confondus).
+        Compute total points across all recorded matches using MATCH_RESULT_POINTS.
         """
         return sum(MATCH_RESULT_POINTS.get(m["résultat"], 0.0) for m in self.match_history)
 
     def get_ranking_score(self, tournament) -> float:
         """
-        Calcule un score global basé sur l'historique des matchs.
-        ******   À IMPLEMENTER PLUS TARD QUAND LES CLASSES DE TOURNOIS ET TOURS SONT CONNECTÉS
-        Paramètre :
-            tournament (Tournament) : Le tournoi concerné.
-        Retourne :
-            float : Total de points accumulés.
+        Placeholder for a future tournament-scoped ranking computation.
+
+        Args:
+            tournament: Tournament instance for context (not used yet).
+
+        Returns:
+            float: Intended to be the tournament-scope score.
+
+        Raises:
+            NotImplementedError: Will be implemented once tournaments/rounds are integrated end-to-end.
         """
         raise NotImplementedError(
             "Le score par tournoi sera implémenté une fois les classes Tournois/Rounds disponibles.")
 
     def get_stats_summary(self, _) -> Dict:
         """
-        Retourne un résumé des performances du joueur sous forme de dictionnaire.
+        Return a summary of player performance as a dictionary (keys remain in French for display/JSON consistency).
 
-        Paramètre :
-            tournament (Tournament | None) : Optionnel — utilisé plus tard pour filtrer les stats par tournoi.
-        Retour :
-            dict : Statistiques du joueur.
+        Returns:
+            dict: Human-friendly stat labels (French) mapped to computed values.
         """
         total = len(self.match_history)
         wins = sum(1 for m in self.match_history if m["résultat"] == "victoire")
@@ -146,7 +147,7 @@ class Player:
 
     def set_last_name(self, last_name: str) -> None:
         """
-        Méthode utilisé afin de modifier le nom de famille du joueur.
+        Update last name after validating with the same French validator used at creation.
         """
         if not VALIDATION_MAP["Nom de famille"](last_name):
             raise ValueError("Nom de famille invalide.")
@@ -154,7 +155,7 @@ class Player:
 
     def set_first_name(self, first_name: str) -> None:
         """
-        Méthode utilisé afin de modifier le prénom du joueur.
+        Update first name after validating with the same French validator used at creation.
         """
         if not VALIDATION_MAP["Prénom"](first_name):
             raise ValueError("Prénom invalide.")
@@ -162,7 +163,7 @@ class Player:
 
     def set_birthdate(self, birthdate: str) -> None:
         """
-        Méthode utilisé afin de modifier la date de naissance du joueur.
+        Update birthdate after validating with the same French validator used at creation.
         """
         if not VALIDATION_MAP["Date de naissance"](birthdate):
             raise ValueError("Date de naissance invalide.")
@@ -170,7 +171,7 @@ class Player:
 
     def set_national_id(self, national_id: str) -> None:
         """
-        Méthode utilisé afin de modifier l'ID national du joueur.
+        Update national ID after validating with the same French validator used at creation.
         """
         if not VALIDATION_MAP["Identifiant national"](national_id):
             raise ValueError("Identifiant national invalide.")
@@ -181,7 +182,8 @@ class Player:
     # ===========================
     def to_dict(self) -> dict:
         """
-        Convertit l'objet Player en dictionnaire pour l’enregistrement JSON.
+        Serialize Player to a JSON-friendly dict. Keys remain in English for fields and in French for data values that
+        are intentionally French (e.g., match_history 'résultat').
         """
         return {
             "last_name": self.last_name,
@@ -196,7 +198,7 @@ class Player:
     @staticmethod
     def from_dict(data: dict) -> "Player":
         """
-        Reconstruit un objet Player à partir d’un dictionnaire.
+        Reconstruct a Player from a dict produced by `to_dict`.
         """
         player = Player(
             last_name=data["last_name"],
@@ -206,7 +208,7 @@ class Player:
             match_history=data.get("match_history", []),
             tournaments_won=data.get("tournaments_won", 0)
         )
-        # Recharge la date d'inscription si elle existe dans le fichier
+        # Keep enrollment date if provided; otherwise initialize now
         player.date_enrolled = data.get("date_enrolled", datetime.now().strftime(DATE_FORMAT))
         return player
 
@@ -216,29 +218,22 @@ class Player:
 
     def save_to_file(self, filepath: str) -> None:
         """
-        Sauvegarde les informations du joueur dans un fichier JSON.
-        Paramètre :
-            filepath (str) : Chemin du fichier de destination.
+        Append this player to the JSON file (creating or extending the list).
         """
         try:
-            # Tente de charger tous les joueurs existants depuis le fichier
             players = Player.load_all_players(filepath)
         except (FileNotFoundError, json.JSONDecodeError):
-            # Si le fichier n'existe pas ou est vide, on démarre avec une liste vide
+            # Start from an empty list if file does not exist or is empty/invalid
             players = []
-
-            # Ajoute ce joueur à la liste
         players.append(self)
-
-        # Réécrit le fichier avec tous les joueurs, y compris le nouveau
         with open(filepath, "w", encoding="utf-8") as file:
             json.dump([p.to_dict() for p in players], file, indent=4, ensure_ascii=False)  # type: ignore
 
     @staticmethod
     def load_all_players(filepath: str) -> List["Player"]:
         """
-        Charge tous les joueurs enregistrés à partir d’un fichier JSON.
+        Load all players from a JSON file and return `Player` instances.
         """
         with open(filepath, "r", encoding="utf-8") as file:
-            data = json.load(file)  # Liste de dictionnaires
-            return [Player.from_dict(p) for p in data]  # Transforme chaque dict en instance Player
+            data = json.load(file)  # List of dicts
+            return [Player.from_dict(p) for p in data]

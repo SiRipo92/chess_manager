@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, List
 import questionary
 from rich.console import Console
 from rich.table import Table
@@ -90,8 +90,129 @@ def prompt_player_national_id(prompt: str = "Entrez l'identifiant national d'éc
 
 
 # --------------------
+# Edit / Search prompts
+# --------------------
+
+def prompt_search_player_query() -> Optional[str]:
+    """
+    Ask for a search query to locate a player.
+
+    Returns:
+        Optional[str]: Raw query (national ID or partial name) or None if cancelled.
+    """
+    return _safe_ask(questionary.text("Rechercher un joueur (ID ou nom) :"))
+
+
+def prompt_select_player(matches: List[Player]) -> Optional[Player]:
+    """
+    If multiple players match, let the user pick one.
+
+    Args:
+        matches: List of Player matches.
+
+    Returns:
+        The selected Player or None if cancelled/no matches.
+    """
+    if not matches:
+        return None
+    if len(matches) == 1:
+        return matches[0]
+
+    choices = [
+        {
+            "name": f"{p.last_name.upper()}, {p.first_name} ({p.national_id})",
+            "value": p.national_id,
+        }
+        for p in matches
+    ]
+    nid = questionary.select("Plusieurs résultats, choisissez :", choices=choices).ask()
+    if not nid:
+        return None
+    for p in matches:
+        if p.national_id == nid:
+            return p
+    return None
+
+
+def prompt_select_field_to_edit() -> Optional[str]:
+    """
+    Let the user choose a single field to edit, or finish/cancel.
+
+    Returns:
+        One of: 'last_name' | 'first_name' | 'birthdate' | 'national_id' |
+        'done' | None
+    """
+    mapping = [
+        ("last_name", FIELD_LABELS["last_name"]),
+        ("first_name", FIELD_LABELS["first_name"]),
+        ("birthdate", FIELD_LABELS["birthdate"]),
+        ("national_id", FIELD_LABELS["national_id"]),
+    ]
+    choices = [{"name": label, "value": key} for key, label in mapping]
+    choices.append({"name": "Terminer et enregistrer", "value": "done"})
+    choices.append({"name": "Annuler", "value": None})
+    return questionary.select("Quel champ souhaitez-vous modifier ?", choices=choices).ask()
+
+
+def prompt_new_value_for_field(attr_key: str) -> Optional[str]:
+    """
+    Ask a new value for the selected attribute.
+    Behavior:
+      - Empty input (just Enter) => cancel and return None (no change).
+      - Non-empty => validate using the same rules as creation; re-prompt on invalid.
+    Returns:
+      str (normalized) or None if cancelled.
+    """
+    attr_to_label = {
+        "last_name": "Nom de famille",
+        "first_name": "Prénom",
+        "birthdate": "Date de naissance",
+        "national_id": "Identifiant national",
+    }
+    label = attr_to_label[attr_key]
+    suffix = " (YYYY-MM-DD)" if attr_key == "birthdate" else ""
+    validator = VALIDATION_MAP[label]
+    while True:
+        raw = _safe_ask(questionary.text(f"{label}{suffix} (laisser vide pour annuler) :"))
+        if raw is None:  # Ctrl+C / Esc
+            return None
+        raw = raw.strip()
+        if raw == "":  # user pressed Enter => cancel this field
+            return None
+        if validator and not validator(raw):
+            display_error_message("Format invalide. Veuillez réessayer.")
+            continue
+        return raw
+
+
+def confirm_field_change(label_fr: str, ancien: str, nouveau: str) -> bool:
+    """
+    Confirm a single field change before applying it.
+
+    Returns:
+        True if confirmed, False otherwise.
+    """
+    return bool(
+        questionary.confirm(
+            f"Confirmer la modification de '{label_fr}' : '{ancien}' → '{nouveau}' ?"
+        ).ask()
+    )
+
+
+def confirm_save_changes() -> bool:
+    """
+    Confirm saving all pending changes to disk.
+
+    Returns:
+        True if confirmed, False otherwise.
+    """
+    return bool(questionary.confirm("Enregistrer ces modifications ?").ask())
+
+# --------------------
 # Confirmations / Errors
 # --------------------
+
+
 def confirm_player_added():
     console.print("✅ [green]Le joueur a bien été ajouté à la base de données.[/green]\n")
 
@@ -99,10 +220,30 @@ def confirm_player_added():
 def display_error_message(reason: str):
     console.print(f"❌ [red]Erreur : {reason}[/red]")
 
+# --------------------
+# Notifications
+# --------------------
+
+
+def notify_no_match() -> None:
+    """Inform that no player matched the search."""
+    console.print("[yellow]Aucun joueur ne correspond à cette recherche.[/yellow]")
+
+
+def notify_duplicate_id() -> None:
+    """Inform that the new national ID would collide with another player."""
+    console.print("[red]Cet identifiant national est déjà utilisé par un autre joueur.[/red]")
+
+
+def notify_saved() -> None:
+    """Inform that changes were saved."""
+    console.print("✅ [green]Modifications enregistrées.[/green]")
 
 # --------------------
 # Displays
 # --------------------
+
+
 def display_player_brief_info(player: Player) -> None:
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Champ")
@@ -158,6 +299,7 @@ def display_all_players(players, scope="global", stats_index=None, show_enrollme
 
         table.add_row(*row)
     console.print(table)
+
 # --------------------
 # Menu
 # --------------------
@@ -168,8 +310,9 @@ def show_player_main_menu() -> str:
     Retourne :
         '1' => Voir les joueurs
         '2' => Ajouter un joueur
-        '3' => Retour
-        '4' => Quitter le programme
+        '3' => Modifier un joueur
+        '4' => Retour
+        '5' => Quitter le programme
     """
     try:
         choice = questionary.select(
@@ -177,11 +320,12 @@ def show_player_main_menu() -> str:
             choices=[
                 {"name": "1. VOIR LES JOUEURS", "value": "1"},
                 {"name": "2. AJOUTER UN NOUVEAU JOUEUR", "value": "2"},
-                {"name": "3. RETOUR", "value": "3"},
-                {"name": "4. QUITTER LE PROGRAMME", "value": "4"},
+                {"name": "3. MODIFIER UN JOUEUR", "value": "3"},
+                {"name": "4. RETOUR", "value": "4"},
+                {"name": "5. QUITTER LE PROGRAMME", "value": "5"},
             ],
         ).ask()
-        return choice or "3"
+        return choice or "4"
     except (EOFError, KeyboardInterrupt):
         console.print("\n⛔ [red]Entrée interrompue. Retour au menu principal.[/red]")
-        return "3"
+        return "4"
