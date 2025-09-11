@@ -84,6 +84,7 @@ def prompt_result_for_match() -> Optional[str]:
 # Description (single-string) view helpers
 # ─────────────────────────────────────────
 
+
 def display_tournament_description(tournament) -> None:
     """
     Show the tournament description (single string) or an empty message.
@@ -93,9 +94,10 @@ def display_tournament_description(tournament) -> None:
         else (getattr(tournament, "description", "") or "")
     console.print("\n[bold cyan]Description du tournoi[/bold cyan]")
     if not text.strip():
-        console.print("[dim]Aucune description pour le moment.[/dim]") # rich library dimmed text
+        console.print("[dim]Aucune description pour le moment.[/dim]")  # rich library dimmed text
     else:
         console.print(text)
+
 
 def prompt_description_menu() -> Optional[str]:
     """
@@ -109,6 +111,7 @@ def prompt_description_menu() -> Optional[str]:
             {"name": "3. Retour", "value": "back"},
         ],
     ).ask()
+
 
 def prompt_edit_description(existing_text: str = "") -> Optional[str]:
     """
@@ -133,11 +136,13 @@ def prompt_edit_description(existing_text: str = "") -> Optional[str]:
         return None
     return value
 
+
 def confirm_clear_description() -> bool:
     """
     Yes/No confirmation for clearing the description.
     """
     return bool(questionary.confirm("Effacer la description du tournoi ?").ask())
+
 
 def announce_round_closed(round_obj: Round) -> None:
     """Notifies the end of a round"""

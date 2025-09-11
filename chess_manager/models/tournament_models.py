@@ -1,7 +1,7 @@
 from __future__ import annotations
 import random
 from datetime import datetime, date
-from typing import List, Dict, Optional, Set, FrozenSet, Union
+from typing import List, Dict, Optional, Set, FrozenSet
 from chess_manager.models.player_models import Player
 from chess_manager.models.round_models import Round
 from chess_manager.models.match_models import Match
@@ -111,7 +111,7 @@ class Tournament:
         """
         return self.description or ""
 
-    def set_description(self, text:str):
+    def set_description(self, text: str) -> None:
         """
         Overwrite the tournament description with the provided string (trimmed).
         """

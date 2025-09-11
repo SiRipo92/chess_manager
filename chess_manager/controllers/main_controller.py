@@ -366,7 +366,6 @@ def _manage_tournament_player_menu(
             choices.append({"name": "3. Voir / Modifier la description", "value": "description"})  # ← add
             choices.append({"name": "4. Quitter", "value": "quit"})
 
-
         elif started and not finished:
             # In progress: resume only; no adding players
             choices = [
