@@ -107,7 +107,7 @@ class Tournament:
     # ----------------------
     def get_description(self) -> str:
         """
-        Return the tournament description as a single string (may be empty).
+        Return the tournament description as a single string (also allowed to be empty).
         """
         return self.description or ""
 
