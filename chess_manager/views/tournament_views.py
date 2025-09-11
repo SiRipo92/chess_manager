@@ -80,6 +80,64 @@ def prompt_result_for_match() -> Optional[str]:
     ).ask()
     return res
 
+# ─────────────────────────────────────────
+# Description (single-string) view helpers
+# ─────────────────────────────────────────
+
+def display_tournament_description(tournament) -> None:
+    """
+    Show the tournament description (single string) or an empty message.
+    """
+    text = tournament.get_description() \
+        if hasattr(tournament, "get_description")\
+        else (getattr(tournament, "description", "") or "")
+    console.print("\n[bold cyan]Description du tournoi[/bold cyan]")
+    if not text.strip():
+        console.print("[dim]Aucune description pour le moment.[/dim]") # rich library dimmed text
+    else:
+        console.print(text)
+
+def prompt_description_menu() -> Optional[str]:
+    """
+    Return one of: 'edit', 'clear', 'back' (or None if cancelled).
+    """
+    return questionary.select(
+        "Description : que souhaitez-vous faire ?",
+        choices=[
+            {"name": "1. Modifier la description", "value": "edit"},
+            {"name": "2. Effacer la description", "value": "clear"},
+            {"name": "3. Retour", "value": "back"},
+        ],
+    ).ask()
+
+def prompt_edit_description(existing_text: str = "") -> Optional[str]:
+    """
+    Prompt the user for a tournament description directly in the CLI.
+    """
+    try:
+        # When the user presses ESC/Ctrl+C or cancels, .ask() returns None
+
+        value = questionary.text(
+            "Nouvelle description :",
+            default=existing_text
+        ).ask()
+    except KeyboardInterrupt:  # KeyboardInterrupt is caught to return
+        return None
+    except Exception as e:
+        # catch any error without crashing the flow.
+        console.print(f"[red]Erreur de saisie de la description : {e}[/red]")
+        return None
+
+    # If the prompt was cancelled or returned nothing, pass None to the caller.
+    if value is None:
+        return None
+    return value
+
+def confirm_clear_description() -> bool:
+    """
+    Yes/No confirmation for clearing the description.
+    """
+    return bool(questionary.confirm("Effacer la description du tournoi ?").ask())
 
 def announce_round_closed(round_obj: Round) -> None:
     """Notifies the end of a round"""
@@ -117,38 +175,41 @@ def announce_tournament_finished(winner_label: str) -> None:
     console.print(f"Gagnant : [bold]{winner_label}[/bold]")
 
 
-def _per_round_code_for(player_id: str, rnd) -> str:
+def per_round_code_for(player_id: str, rnd) -> str:
     """
     Return 'V', 'D', 'N', 'E' for the given player in this round (or '' if absent).
     """
     for m in rnd.matches:
-        # exempt handled first
-        if m.player2 is None and m.player1.national_id == player_id:
-            return "E"
+        # Exempt match: only player1 exists
         if m.player2 is None:
+            if m.player1.national_id == player_id:
+                return "E"
             continue
 
-        if m.player1.national_id == player_id:
-            s1 = float(getattr(m, "score1", 0.0) or 0.0)
-            s2 = float(getattr(m, "score2", 0.0) or 0.0)
-            if s1 == 1.0 and s2 == 0.0:
-                return "V"
-            if s1 == 0.5 and s2 == 0.5:
-                return "N"
-            if s1 == 0.0 and s2 == 1.0:
-                return "D"
-            return (getattr(m, "result_code", "") or getattr(m, "result1", "") or "").upper()
+        # If the player is in this match, normalize perspective:
+        if m.player1.national_id == player_id or m.player2.national_id == player_id:
+            if m.player1.national_id == player_id:
+                s_self = float(getattr(m, "score1", 0.0) or 0.0)
+                s_opp = float(getattr(m, "score2", 0.0) or 0.0)
+                # Prefer a per-match result code if present, else player1-specific
+                fallback = (getattr(m, "result_code", "") or getattr(m, "result1", "") or "")
+            else:
+                s_self = float(getattr(m, "score2", 0.0) or 0.0)
+                s_opp = float(getattr(m, "score1", 0.0) or 0.0)
+                fallback = (getattr(m, "result2", "") or "")
 
-        if m.player2.national_id == player_id:
-            s1 = float(getattr(m, "score1", 0.0) or 0.0)
-            s2 = float(getattr(m, "score2", 0.0) or 0.0)
-            if s2 == 1.0 and s1 == 0.0:
+            # Compare using rounded tuples to avoid tiny float artifacts
+            key = (round(s_self, 1), round(s_opp, 1))
+            if key == (1.0, 0.0):
                 return "V"
-            if s1 == 0.5 and s2 == 0.5:
+            if key == (0.5, 0.5):
                 return "N"
-            if s2 == 0.0 and s1 == 1.0:
+            if key == (0.0, 1.0):
                 return "D"
-            return (getattr(m, "result2", "") or "").upper()
+
+            # If scores don't map cleanly, fall back to any recorded code
+            return str(fallback).upper()
+
     return ""
 
 
@@ -200,7 +261,7 @@ def display_tournament_recap(tournament) -> None:
     for p in players_sorted:
         row = [f"{p.last_name.upper()}, {p.first_name}", p.national_id]
         for r in tournament.rounds:
-            row.append(_per_round_code_for(p.national_id, r))
+            row.append(per_round_code_for(p.national_id, r))
         matrix.add_row(*row)
 
     console.print(matrix)
