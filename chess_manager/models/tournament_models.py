@@ -1,7 +1,7 @@
 from __future__ import annotations
 import random
 from datetime import datetime, date
-from typing import List, Dict, Optional, Set, FrozenSet
+from typing import List, Dict, Optional, Set, FrozenSet, Union
 from chess_manager.models.player_models import Player
 from chess_manager.models.round_models import Round
 from chess_manager.models.match_models import Match
@@ -12,12 +12,12 @@ class Tournament:
     Chess tournament domain model.
 
     Attributes:
-        location: Tournament location (free text).
+        location: Tournament location.
         start_date: 'YYYY-MM-DD'. Set when the tournament is launched.
         end_date: 'YYYY-MM-DD'. Set when the tournament is finished.
         started_at: ISO datetime timestamp set at launch (precise time).
         finished_at: ISO datetime timestamp set when finished.
-        description: Free text description.
+        description: Single string describing the tournament (notes/summary).
         number_rounds: Planned number of rounds (default 4).
         current_round_number: 0 before start, increases as rounds are created.
         players: Roster for this tournament (Player instances).
@@ -49,7 +49,7 @@ class Tournament:
         self.end_date = end_date or ""       # set when finished
         self.started_at: str = ""            # ex: e.g. "2025-08-10T14:32:05.123456"
         self.finished_at: str = ""           # set when finished
-        self.description = description
+        self.description = description.strip()
         self.number_rounds = number_rounds
 
         self.current_round_number = 0
@@ -61,6 +61,10 @@ class Tournament:
 
         # Repository-facing persisted name (e.g., "tournament_1_nanterre_2025-08-15")
         self.repo_name: str = ""
+
+    # ----------------------
+    # Basic derived props
+    # ----------------------
 
     @property
     def status(self) -> str:
@@ -98,6 +102,25 @@ class Tournament:
         """
         return self.current_round_number == 0
 
+    # ----------------------
+    # Description helpers
+    # ----------------------
+    def get_description(self) -> str:
+        """
+        Return the tournament description as a single string (may be empty).
+        """
+        return self.description or ""
+
+    def set_description(self, text:str):
+        """
+        Overwrite the tournament description with the provided string (trimmed).
+        """
+        self.description = (text or "").strip()
+
+    # ----------------------
+    # Roster helpers
+    # ----------------------
+
     def has_player(self, national_id: str) -> bool:
         """
         Check if a player (by ID) is already on the roster.
@@ -119,7 +142,9 @@ class Tournament:
         """
         return len(self.players)
 
-    # --- lifecycle helpers -------------------------------------------------
+    # ----------------------
+    # Lifecycle helpers
+    # ----------------------
 
     def mark_launched(self) -> None:
         """
@@ -174,7 +199,6 @@ class Tournament:
         # Initialise le score du joueur pour CE tournoi
         self.scores[player.national_id] = 0.0
 
-    # If you prefer to keep the tournament storing only IDs:
     def add_player_id(self, national_id: str, lookup: dict[str, Player]) -> None:
         """
         Add a player by ID using a provided lookup.
@@ -200,7 +224,7 @@ class Tournament:
     # Génération des tours
     # ----------------------
 
-    def _validate_roster_before_launch(self) -> None:
+    def validate_roster_before_launch(self) -> None:
         """
         Validate roster constraints before starting round 1.
 
@@ -238,7 +262,7 @@ class Tournament:
         """
         if self.current_round_number != 0:
             raise ValueError("Le tournoi a déjà démarré.")
-        self._validate_roster_before_launch()
+        self.validate_roster_before_launch()
 
         self.mark_launched()
         self.current_round_number = 1
@@ -252,7 +276,7 @@ class Tournament:
             p1, p2 = pool[i], pool[i + 1]
             match = Match(p1, p2)
             round.add_match(match)
-            self._remember_pair(p1.national_id, p2.national_id)
+            self.remember_pair(p1.national_id, p2.national_id)
             i += 2
 
         if len(pool) % 2 == 1:
@@ -260,7 +284,7 @@ class Tournament:
             exempt_match = Match(exempt_player, None)
             exempt_match.set_result_by_code("E")
             round.add_match(exempt_match)
-            self._apply_match_points(exempt_match)
+            self.apply_match_points(exempt_match)
 
         self.rounds.append(round)
         return round
@@ -292,15 +316,15 @@ class Tournament:
         self.current_round_number += 1
         round = Round(self.current_round_number)
 
-        sorted_ids = self._sorted_player_ids_by_score()
+        sorted_ids = self.sorted_player_ids_by_score()
 
         if len(sorted_ids) % 2 == 1:
             exempt_id = sorted_ids.pop()
-            exempt_player = self._player_by_id(exempt_id)
+            exempt_player = self.get_player_by_id(exempt_id)
             exempt_match = Match(exempt_player, None)
             exempt_match.set_result_by_code("E")
             round.add_match(exempt_match)
-            self._apply_match_points(exempt_match)
+            self.apply_match_points(exempt_match)
 
         used: Set[str] = set()
         i = 0
@@ -310,7 +334,7 @@ class Tournament:
                 i += 1
                 continue
 
-            p2_id = self._find_partner(p1_id, sorted_ids, used)
+            p2_id = self.find_partner(p1_id, sorted_ids, used)
             if p2_id is None:
                 p2_id = next((pid for pid in sorted_ids[i + 1:] if pid not in used and pid != p1_id), None)
 
@@ -318,11 +342,11 @@ class Tournament:
                 i += 1
                 continue
 
-            p1 = self._player_by_id(p1_id)
-            p2 = self._player_by_id(p2_id)
+            p1 = self.get_player_by_id(p1_id)
+            p2 = self.get_player_by_id(p2_id)
             match = Match(p1, p2)
             round.add_match(match)
-            self._remember_pair(p1_id, p2_id)
+            self.remember_pair(p1_id, p2_id)
             used.add(p1_id)
             used.add(p2_id)
             i += 1
@@ -341,7 +365,7 @@ class Tournament:
             Mutates `self.scores` in place by adding match points.
         """
         for match in tournament_round.matches:
-            self._apply_match_points(match)
+            self.apply_match_points(match)
 
     # --------------
     # Sérialisation
@@ -355,7 +379,7 @@ class Tournament:
             Dict with primitive types only (nested players/rounds also serialized).
         """
         return {
-            "name": self.repo_name or self.name,  # << ensure repo can upsert
+            "name": self.repo_name or self.name,
             "location": self.location,
             "start_date": self.start_date,
             "end_date": self.end_date,
@@ -391,7 +415,7 @@ class Tournament:
             location=data["location"],
             start_date=start_date or "",
             end_date=data.get("end_date", ""),
-            description=data.get("description", ""),
+            description=str(data.get("description", "") or ""),
             number_rounds=int(data.get("number_rounds", 4)),
         )
         tournament.repo_name = data.get("name", "")  # << preserve repo name
@@ -406,10 +430,8 @@ class Tournament:
                 tournament.players.append(Player.from_dict(entry))
             elif isinstance(entry, Player):
                 tournament.players.append(entry)
-            # elif isinstance(entry, str):  # legacy: skip or resolve elsewhere
-            #     ...
 
-        # rounds (needs lookup)
+        # rounds
         player_lookup = {p.national_id: p for p in tournament.players}
         tournament.rounds = [Round.from_dict(rd, player_lookup) for rd in data.get("rounds", [])]
 
@@ -432,7 +454,7 @@ class Tournament:
     # Helpers (internal use)
     # =======================
 
-    def _player_by_id(self, national_id: str) -> Player:
+    def get_player_by_id(self, national_id: str) -> Player:
         """
         Resolve a Player instance by national ID from the current roster.
 
@@ -450,7 +472,7 @@ class Tournament:
                 return p
         raise KeyError(f"Joueur introuvable : {national_id}")
 
-    def _remember_pair(self, id1: str, id2: str) -> None:
+    def remember_pair(self, id1: str, id2: str) -> None:
         """
         Record that two players have already been paired in this tournament.
 
@@ -463,7 +485,7 @@ class Tournament:
         """
         self.past_pairs.add(frozenset((id1, id2)))
 
-    def _have_played_before(self, id1: str, id2: str) -> bool:
+    def have_played_before(self, id1: str, id2: str) -> bool:
         """
         Check if two players have previously been paired.
 
@@ -476,7 +498,7 @@ class Tournament:
         """
         return frozenset((id1, id2)) in self.past_pairs
 
-    def _sorted_player_ids_by_score(self) -> List[str]:
+    def sorted_player_ids_by_score(self) -> List[str]:
         """
         Return player IDs sorted by current score (desc), shuffling within ties.
 
@@ -494,11 +516,11 @@ class Tournament:
         result: List[str] = []
         for sc in sorted_scores:
             ids = buckets[sc]
-            random.shuffle(ids)   # mélange dans le groupe à score égal (Swiss-like)
+            random.shuffle(ids)   # shuffle inside same-score bucket (Swiss-like)
             result.extend(ids)
         return result
 
-    def _find_partner(self, p1_id: str, sorted_ids: List[str], used: Set[str]) -> Optional[str]:
+    def find_partner(self, p1_id: str, sorted_ids: List[str], used: Set[str]) -> Optional[str]:
         """
         Find a compatible partner for p1_id scanning forward in sorted_ids.
 
@@ -523,11 +545,11 @@ class Tournament:
         for p2_id in sorted_ids[start_idx:]:
             if p2_id in used:
                 continue
-            if not self._have_played_before(p1_id, p2_id):
+            if not self.have_played_before(p1_id, p2_id):
                 return p2_id
         return None  # aucun partenaire “propre” trouvé
 
-    def _apply_match_points(self, match: Match) -> None:
+    def apply_match_points(self, match: Match) -> None:
         """
         Add match points into the tournament `scores`.
 
