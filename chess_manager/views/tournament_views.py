@@ -248,6 +248,9 @@ def display_tournament_recap(tournament) -> None:
     meta.add_row("Heure (fin)  :", datetime_formatting(getattr(tournament, "finished_at", "")) or "—")
     console.print(meta)
 
+    # Show the description in the recap
+    display_tournament_description(tournament)
+
     # Final standings
     players_sorted = display_final_standings(tournament)
 

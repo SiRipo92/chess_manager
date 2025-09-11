@@ -151,15 +151,19 @@ def manage_tournament_description(model: Tournament, repo=None) -> None:
                 new_text = prompt_edit_description(current)
             except KeyboardInterrupt:
                 continue
+
+            # Only persist if user actually provided a new value
             if new_text is not None:
-                model.set_description(new_text)
-            else:
-                model.description = new_text
-            if repo is not None:
-                try:
-                    repo.save_tournament(model.to_dict())
-                except Exception as e:
-                    console.print(f"[red]Échec de la sauvegarde de la description : {e}[/red]")
+                if hasattr(model, "set_description"):
+                    model.set_description(new_text)
+                else:
+                    model.description = new_text
+
+                if repo is not None:
+                    try:
+                        repo.save_tournament(model.to_dict())
+                    except Exception as e:
+                        console.print(f"[red]Échec de la sauvegarde de la description : {e}[/red]")
 
         elif action == "clear":
             try:
@@ -168,11 +172,13 @@ def manage_tournament_description(model: Tournament, repo=None) -> None:
                         model.set_description("")
                     else:
                         model.description = ""
-                        if repo is not None:
-                            try:
-                                repo.save_tournament(model.to_dict())
-                            except Exception as e:
-                                console.print(f"[red]Échec de la sauvegarde de la description : {e}[/red]")
+
+                    # Persist/save regardless of which branch was taken
+                    if repo is not None:
+                        try:
+                            repo.save_tournament(model.to_dict())
+                        except Exception as e:
+                            console.print(f"[red]Échec de la sauvegarde de la description : {e}[/red]")
             except KeyboardInterrupt:
                 continue
 
