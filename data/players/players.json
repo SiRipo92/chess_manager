@@ -27,6 +27,15 @@
     "tournaments_won": 0
   },
   {
+    "last_name": "Carvalho",
+    "first_name": "Carla",
+    "birthdate": "1979-06-23",
+    "national_id": "BR43652",
+    "date_enrolled": "2025-09-11",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
     "last_name": "Chevalier",
     "first_name": "Alexandre",
     "birthdate": "1993-10-05",
@@ -72,6 +81,15 @@
     "tournaments_won": 0
   },
   {
+    "last_name": "Gegelarsouille",
+    "first_name": "Kisscool",
+    "birthdate": "1980-11-03",
+    "national_id": "GG06900",
+    "date_enrolled": "2025-09-08",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
     "last_name": "Glover",
     "first_name": "Donjon",
     "birthdate": "1975-11-04",
@@ -99,6 +117,15 @@
     "tournaments_won": 0
   },
   {
+    "last_name": "Macron",
+    "first_name": "Emmanuel",
+    "birthdate": "1977-12-21",
+    "national_id": "FR10101",
+    "date_enrolled": "2025-09-12",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
     "last_name": "Martin",
     "first_name": "Luc",
     "birthdate": "1985-11-02",
@@ -115,6 +142,15 @@
     "date_enrolled": "2025-05-05",
     "match_history": [],
     "tournaments_won": 1
+  },
+  {
+    "last_name": "Obama",
+    "first_name": "Barack",
+    "birthdate": "1961-08-04",
+    "national_id": "US10000",
+    "date_enrolled": "2025-09-12",
+    "match_history": [],
+    "tournaments_won": 0
   },
   {
     "last_name": "Petit",
@@ -145,7 +181,7 @@
   },
   {
     "last_name": "Roux",
-    "first_name": "Elise",
+    "first_name": "Anais",
     "birthdate": "1995-01-08",
     "national_id": "AH00007",
     "date_enrolled": "2025-07-01",
@@ -158,6 +194,15 @@
     "birthdate": "1966-06-13",
     "national_id": "LO73400",
     "date_enrolled": "2025-08-21",
+    "match_history": [],
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Vader",
+    "first_name": "Darth",
+    "birthdate": "1970-01-01",
+    "national_id": "DV20001",
+    "date_enrolled": "2025-09-12",
     "match_history": [],
     "tournaments_won": 0
   }

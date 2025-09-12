@@ -11,6 +11,7 @@ from chess_manager.utils.tournament_utils import generate_tournament_name, build
 from chess_manager.controllers.tournament_controller import (
     launch_first_round_flow,
     run_rounds_until_done,
+    manage_tournament_description,
 )
 
 console = Console()
@@ -264,7 +265,7 @@ def _launch_tournament_flow(
     repo.save_tournament(model.to_dict())
 
     # Run scoring loop for all rounds (resumable if user quits mid-way)
-    run_rounds_until_done(model)
+    run_rounds_until_done(model, repo=repo)
 
     # Persist final state
     repo.save_tournament(model.to_dict())
@@ -278,7 +279,7 @@ def _resume_tournament_flow(
     partially entered, continue; otherwise start the next round.
     """
     model = _as_model(tournament)
-    run_rounds_until_done(model)
+    run_rounds_until_done(model, repo=repo)
     repo.save_tournament(model.to_dict())
 
 
@@ -352,8 +353,10 @@ def _manage_tournament_player_menu(
         console.print(f"[dim]Statut : {_status_label_plain(tournament)}[/dim]")
 
         # --- build choices by status (no extra status prints below)
+        desc_exists = bool((tournament.get("description") or "").strip())
+        desc_label = "Voir / Modifier la description" if desc_exists else "Ajouter une description"
+
         if not started and not finished:
-            # Only BEFORE start can we add players
             choices = [{"name": "1. Ajouter un joueur manuellement", "value": "add"}]
             if enough:
                 choices.append({"name": "2. Lancer le tournoi", "value": "launch"})
@@ -363,20 +366,23 @@ def _manage_tournament_player_menu(
                     "name": f"2. Lancer le tournoi (requiert {missing} joueur(s) de plus)",
                     "value": "launch_disabled",
                 })
-            choices.append({"name": "3. Quitter", "value": "quit"})
+            choices.append({"name": f"3. {desc_label}", "value": "description"})
+            choices.append({"name": "4. Quitter", "value": "quit"})
 
         elif started and not finished:
             # In progress: resume only; no adding players
             choices = [
                 {"name": "1. Reprendre la saisie / continuer", "value": "resume"},
-                {"name": "2. Quitter", "value": "quit"},
+                {"name": f"2. {desc_label}", "value": "description"},
+                {"name": "3. Quitter", "value": "quit"},
             ]
 
         else:
             # Finished
             choices = [
                 {"name": "1. Voir le récapitulatif", "value": "summary"},
-                {"name": "2. Quitter", "value": "quit"},
+                {"name": f"2. {desc_label}", "value": "description"},
+                {"name": "3. Quitter", "value": "quit"},
             ]
 
         action = questionary.select("Que souhaitez-vous faire ?", choices=choices).ask()
@@ -423,6 +429,23 @@ def _manage_tournament_player_menu(
 
         elif action == "summary":
             _show_summary(tournament)
+            fresh = repo.get_tournament_by_name(tournament.get("name", ""))
+            if fresh:
+                tournament = _as_dict(fresh)
+
+        elif action == "description":
+            # Load latest snapshot description, convert to model for setters/getters
+            fresh = repo.get_tournament_by_name(tournament.get("name", "")) if tournament.get("name") else None
+            model = _as_model(fresh if fresh else tournament)
+
+            try:
+                manage_tournament_description(model, repo=repo)
+            except KeyboardInterrupt:
+                pass
+            except Exception as e:
+                player_views.display_error_message(f"Erreur lors de l'édition de la description : {e}")
+
+            # Refresh local dict after possible edits
             fresh = repo.get_tournament_by_name(tournament.get("name", ""))
             if fresh:
                 tournament = _as_dict(fresh)
