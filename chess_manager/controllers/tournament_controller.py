@@ -141,7 +141,14 @@ def manage_tournament_description(model: Tournament, repo=None) -> None:
     """
     while True:
         display_tournament_description(model)
-        action = prompt_description_menu()
+        has_text = bool(
+            (
+                model.get_description()
+                if hasattr(model, "get_description")
+                else model.description or ""
+            ).strip()
+        )
+        action = prompt_description_menu(has_text)
         if action in (None, "back"):
             return
 

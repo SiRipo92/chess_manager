@@ -99,17 +99,26 @@ def display_tournament_description(tournament) -> None:
         console.print(text)
 
 
-def prompt_description_menu() -> Optional[str]:
+def prompt_description_menu(has_text: bool) -> Optional[str]:
     """
-    Return one of: 'edit', 'clear', 'back' (or None if cancelled).
+    Returns one of: 'edit', 'clear', 'back' (or None if cancelled).
+    If no description yet, offers 'Ajouter' and hide 'Effacer'.
     """
-    return questionary.select(
-        "Description : que souhaitez-vous faire ?",
-        choices=[
+    if has_text:
+        choices = [
             {"name": "1. Modifier la description", "value": "edit"},
             {"name": "2. Effacer la description", "value": "clear"},
             {"name": "3. Retour", "value": "back"},
-        ],
+        ]
+    else:
+        choices = [
+            {"name": "1. Ajouter une description", "value": "edit"},
+            {"name": "2. Retour", "value": "back"},
+        ]
+
+    return questionary.select(
+        "Description : que souhaitez-vous faire ?",
+        choices=choices,
     ).ask()
 
 

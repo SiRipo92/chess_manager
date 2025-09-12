@@ -172,7 +172,7 @@ def _apply_points_once(tournament: Tournament, match: Match) -> None:
     if callable(award):
         award(match)
     else:
-        tournament._apply_match_points(match)  # using internal fallback intentionally
+        tournament.apply_match_points(match)  # using internal fallback intentionally
 
 
 def _rollback_points(tournament: Tournament, match: Match) -> None:

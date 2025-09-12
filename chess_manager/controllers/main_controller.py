@@ -353,6 +353,9 @@ def _manage_tournament_player_menu(
         console.print(f"[dim]Statut : {_status_label_plain(tournament)}[/dim]")
 
         # --- build choices by status (no extra status prints below)
+        desc_exists = bool((tournament.get("description") or "").strip())
+        desc_label = "Voir / Modifier la description" if desc_exists else "Ajouter une description"
+
         if not started and not finished:
             choices = [{"name": "1. Ajouter un joueur manuellement", "value": "add"}]
             if enough:
@@ -363,14 +366,14 @@ def _manage_tournament_player_menu(
                     "name": f"2. Lancer le tournoi (requiert {missing} joueur(s) de plus)",
                     "value": "launch_disabled",
                 })
-            choices.append({"name": "3. Voir / Modifier la description", "value": "description"})  # ← add
+            choices.append({"name": f"3. {desc_label}", "value": "description"})
             choices.append({"name": "4. Quitter", "value": "quit"})
 
         elif started and not finished:
             # In progress: resume only; no adding players
             choices = [
                 {"name": "1. Reprendre la saisie / continuer", "value": "resume"},
-                {"name": "2. Voir / Modifier la description", "value": "description"},
+                {"name": f"2. {desc_label}", "value": "description"},
                 {"name": "3. Quitter", "value": "quit"},
             ]
 
@@ -378,7 +381,7 @@ def _manage_tournament_player_menu(
             # Finished
             choices = [
                 {"name": "1. Voir le récapitulatif", "value": "summary"},
-                {"name": "2. Voir / Modifier la description", "value": "description"},  # ← add
+                {"name": f"2. {desc_label}", "value": "description"},
                 {"name": "3. Quitter", "value": "quit"},
             ]
 
