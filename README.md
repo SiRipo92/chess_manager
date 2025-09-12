@@ -7,13 +7,11 @@
 ```bash
 chess_manager/                  # Project root
 ├── chess_manager/             # Internal package containing core logic
-│   ├── controllers/           # Business logic (managing players, tournaments, rounds)
-│   ├── models/                # Data models (Player, Match, Round, Tournament)
+│   ├── controllers/           # Business logic (managing players, tournaments, rounds, main)
+│   ├── models/                # Data models (Player, Match, Round, Tournament, TournamentRepository)
 │   ├── views/                 # CLI views using `questionary` and `rich`
 │   ├── constants/             # Centralized constants (labels, validation rules, mappings)
 │   ├── utils/                 # Helper/validator functions for field inputs
-│
-├── repositories/              # Persistence layer for loading/saving JSON files
 ├── data/                      # Directory containing JSON data files
 │   ├── players/
 │   │   ├── players.json       # JSON data file with enrolled players
@@ -84,6 +82,10 @@ These stats are computed from the tournament repository, so the view always refl
   + Final standings and a per-round results grid at the end. 
   + Clear status banners (“Non démarré”, “En cours X%”, “Terminé”).
 
++ **Tournament notes / descriptions**
+  + Add/Edit/Clear a single-string description any time (before, during, or after the event).
+  + The description is persisted and shown in the final recap if present.
+
 + **Correcting input**
   + During a round (before confirming it), you can reselect a match and overwrite its result to correct mistakes. 
   + After confirmation, you can resume later rounds; (post-confirmation edits can be added if needed).
@@ -101,12 +103,12 @@ These stats are computed from the tournament repository, so the view always refl
 
 ## 🧠 How It Works (Architecture)
 + **Models** 
-<br> Player, Match, Round, Tournament (with lifecycle helpers: mark_launched, mark_finished, start_first_round, start_next_round, etc.).
-Tournament.status is derived: En attente → En cours → Terminé.
+<br> Tournament includes lifecycle helpers: mark_launched, mark_finished, start_first_round, start_next_round, update_scores_from_round, plus description helpers get_description / set_description.
+<br> Status is derived: En attente → En cours → Terminé.
 
 + **Controllers**
 <br> PlayerController — CRU, search, edit flow (per-field confirmation), JSON persistence.
-TournamentController — launching rounds, entering/correcting results, provisional standings, persistence.
+<br> TournamentController — launching rounds, entering/correcting results, provisional standings, persistence.
 
 + **Views**
 <br> player_views and round_views render Rich tables and drive interactive Questionary prompts. Views also explain what’s happening (what changed, what’s left, summaries, confirmations).

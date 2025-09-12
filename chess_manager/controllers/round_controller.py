@@ -3,9 +3,14 @@ from rich.console import Console
 import questionary
 from datetime import datetime
 from chess_manager.models.tournament_models import Tournament
-from chess_manager.models.match_models import Match
 from chess_manager.models.round_models import Round
 from chess_manager.views.round_views import display_round_results, display_standings
+from chess_manager.views.match_views import prompt_result_for_match
+from chess_manager.controllers.match_controller import (
+    _has_result,
+    _apply_points_once,
+    _rollback_points,
+)
 
 console = Console()
 
@@ -54,14 +59,7 @@ def score_round(tournament: Tournament, rnd: Round) -> bool:
             continue
 
         # Ask for result
-        result_code = questionary.select(
-            "Résultat pour le joueur 1 :",
-            choices=[
-                {"name": "Victoire (V)", "value": "V"},
-                {"name": "Défaite (D)", "value": "D"},
-                {"name": "Match nul (N)", "value": "N"},
-            ],
-        ).ask()
+        result_code = prompt_result_for_match()
         if result_code is None:
             continue
 
@@ -114,15 +112,7 @@ def score_round(tournament: Tournament, rnd: Round) -> bool:
 
             # Roll back previous points, re-enter result, re-apply
             _rollback_points(tournament, m)
-
-            new_code = questionary.select(
-                "Nouveau résultat pour le joueur 1 :",
-                choices=[
-                    {"name": "Victoire (V)", "value": "V"},
-                    {"name": "Défaite (D)", "value": "D"},
-                    {"name": "Match nul (N)", "value": "N"},
-                ],
-            ).ask()
+            new_code = prompt_result_for_match()
             if new_code is None:
                 # restore old points if user cancels
                 _apply_points_once(tournament, m)
@@ -140,55 +130,6 @@ def score_round(tournament: Tournament, rnd: Round) -> bool:
 # -----------------------
 # Helpers
 # -----------------------
-
-def _has_result(match: Match) -> bool:
-    """
-    A match is considered 'scored' if the model says so, or if we see an explicit result code.
-    We DO NOT rely on numeric scores (which may default to 0.0).
-    """
-    # Prefer model API if present
-    if hasattr(match, "is_scored") and callable(match.is_scored):
-        return bool(match.is_scored())
-
-    # Fallback: detect explicit result code or exempt
-    # Try common attributes you may have (adjust if your Match uses different names)
-    for attr in ("result_code", "result1"):
-        if getattr(match, attr, None):
-            return True
-
-    # Exempt (player2 is None) is also “done”
-    if match.player2 is None:
-        return True
-
-    return False
-
-
-def _apply_points_once(tournament: Tournament, match: Match) -> None:
-    """
-    Award points for a single match.
-    Prefer a public wrapper if present; fallback to the internal method.
-    """
-    award = getattr(tournament, "award_points_for_match", None)
-    if callable(award):
-        award(match)
-    else:
-        tournament.apply_match_points(match)  # using internal fallback intentionally
-
-
-def _rollback_points(tournament: Tournament, match: Match) -> None:
-    """
-    Subtract the points previously applied for this match.
-    Assumes tournament.scores currently includes the match's contribution.
-    """
-    id1 = match.player1.national_id
-    s1 = float(getattr(match, "score1", 0.0) or 0.0)
-    tournament.scores[id1] = tournament.scores.get(id1, 0.0) - s1
-
-    if match.player2:
-        id2 = match.player2.national_id
-        s2 = float(getattr(match, "score2", 0.0) or 0.0)
-        tournament.scores[id2] = tournament.scores.get(id2, 0.0) - s2
-
 
 def _count_pending_matches(rnd: Round) -> int:
     """Matches with missing results (excluding byes)."""
