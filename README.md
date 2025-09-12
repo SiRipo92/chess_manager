@@ -102,22 +102,45 @@ These stats are computed from the tournament repository, so the view always refl
 <br> Built with Rich for tables/formatting and Questionary for prompts. User-friendly messages, colors, and summaries at each step.
 
 ## 🧠 How It Works (Architecture)
-+ **Models** 
-<br> Tournament includes lifecycle helpers: mark_launched, mark_finished, start_first_round, start_next_round, update_scores_from_round, plus description helpers get_description / set_description.
-<br> Status is derived: En attente → En cours → Terminé.
+### Models
++ **Player** : One chess player with validated fields (name, <code>YYYY-MM-DD birthdate</code>, ID like <code>AB12345</code>). Normalizes names, timestamps enrollment, records match results (<code>V/D/N</code> → “victoire/défaite/nul”), computes age/points, and (de)serializes cleanly to JSON.
+<br><br>
++ **Match** : One game between two players (or a bye). Stores result as labels and numeric scores; supports set_result_by_code(<code>'V'|'D'|'N'|'E'</code>), auto-handles byes when <code>player2=None</code>, and (de)serializes using player IDs.
+<br><br>
++ **Round** : A round with start/end timestamps and a list of matches. Adds matches, marks completion, and (de)serializes; rebuilds matches via a <code>player_lookup</code>.
+<br><br>
++ **Tournament** : The event: location/dates, roster, rounds, live <code>scores{pid:points}</code>, and <code>past_pairs</code>. Validates roster (min 8), launches <code>start_first_round()</code> (shuffle + auto-bye), pairs Swiss-like in <code>start_next_round()</code> (bucket by score, avoid repeats), applies points, manages a single description, and (de)serializes (players/rounds/scores/pairs). Preserves a stable <code>repo_name</code>.
+<br><br>
++ **TournamentRepository** : Flat JSON persistence at <code>data/tournaments/tournaments.json</code> (auto-creates). Loads all, upserts by case-insensitive <ode>name</code>, and fetches by name (returns dicts). Tournaments form the authoritative history; if <code>players.json</code> is missing, global stats can still be inferred from past tournaments.
 
-+ **Controllers**
-<br> PlayerController — CRU, search, edit flow (per-field confirmation), JSON persistence.
-<br> TournamentController — launching rounds, entering/correcting results, provisional standings, persistence.
+## Views
++ **Player** : All player UI (create/edit/search) with Questionary + Rich, reusing the same validators; renders recap and lists with optional global stats. Pure presentation (returns values or <code>None</code>).
+<br><br>
++ **Match** : Tiny prompt that returns a result for Player 1 (<code>'V'|'D'|'N'</code> or <code>None</code>). No side effects.
+<br><br>
++ **Round** : Pairings, per-match result table, live standings, “round finished” banner, and “which match to score” menu. Display-only.
+<br><br>
++ **Tournament** : Launch confirmation, pairings tables, match-selection menu, P1 result picker, live rankings/progress, final recap (timestamps, standings, per-round matrix), and view/edit/clear for the description. Display-only.
 
-+ **Views**
-<br> player_views and round_views render Rich tables and drive interactive Questionary prompts. Views also explain what’s happening (what changed, what’s left, summaries, confirmations).
 
-+ **Utilities**
-<br> player_validators (names, dates, national-ID), tournament_utils (progress %, winners/participations/matches/points aggregation).
+## Controllers
++ **Main Controller** : Entry point and top-level menu. Creates tournaments (named via generator) in the repo, opens a per-tournament submenu (add players, launch/resume, summary, description), reloads state each loop, and delegates to other controllers/views; persists after critical steps.
+<br><br>
++ **Player** : Ensures <code>players.json</code> exists, loads/saves (keeps alphabetical), validates on create, enforces unique IDs, supports fuzzy search, and drives interactive add/edit/manage using <code>player_views</code>. Pulls live stats from tournaments for the list view.
+<br><br>
++ **Match** : Match-centric helpers: detect if a match already has a result/bye, apply points exactly once, and rollback when editing—pure logic (no prompts/files).
+<br><br>
++ **Round** : Interactive scoring loop for one round: pick unscored match → ask result → apply/rollback points via Match Controller → show live standings → confirm/edit round → return <code>True/False</code>. Pairings come from the model; saving is done by the caller.
+<br><br>
++ **Tournament** : Orchestrates launch and multi-round flow around the model: confirm → <code>start_first_round()</code> → score → loop <code>start_next_round()</code>/score with best-effort saves each round; optional description edit; <code>mark_finished()</code> + final save + recap. Separate loop to view/edit/clear description.
 
-+ **Repositories**
-<br> Thin wrappers around JSON (load/save; tolerant of dict vs. model instances).
+## Utilities
++ **Tournament Utilities** : Glue helpers: <code>as_model</code>/<code>as_dict</code>, timestamp formatting, slug + <code>generate_tournament_name</code>, and global stats (<code>participations_by_player</code>, <code>wins_by_player</code> (finished-only), <code>live_match_stats</code>) combined by <code>build_player_tournament_index</code> (works with dicts or models; can infer players from rounds if <code>players.json</code> is absent).
+<br><br>
++ **Match Validators** : <code>is_valid_match_result_code('V'|'D'|'N'|'E')</code>, <code>is_valid_match_result_label('victoire'|'défaite'|'nul'|'exempt')</code>.
+  <br><br>
++ **Player Validators** : <code>is_valid_birthdate(YYYY-MM-DD, past, 1915..current)</code>, <code>is_valid_name (letters+accents/' -)</code>, <code>is_valid_id</code> (2 letters + 5 digits). Reused across the app for consistent checks.
+
 
 
 ### 📊 Stats & Leaderboards
