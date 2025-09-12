@@ -7,7 +7,12 @@ from chess_manager.views import player_views, round_views
 from chess_manager.models.player_models import Player
 from chess_manager.controllers.player_controller import PlayerController
 from chess_manager.models.tournament_repository import TournamentRepository
-from chess_manager.utils.tournament_utils import generate_tournament_name, build_player_tournament_index
+from chess_manager.utils.tournament_utils import (
+    generate_tournament_name,
+    build_player_tournament_index,
+    as_model,
+    as_dict
+)
 from chess_manager.controllers.tournament_controller import (
     launch_first_round_flow,
     run_rounds_until_done,
@@ -55,7 +60,7 @@ def _create_and_open_tournament(
 
     current = repo.get_tournament_by_name(name)
     if current:
-        current = _as_dict(current)
+        current = as_dict(current)
         _manage_tournament_player_menu(repo, current, controller)
 
 
@@ -213,32 +218,6 @@ def _is_finished(t: dict | object) -> bool:
     return bool(getattr(t, "finished_at", "")) or getattr(t, "status", "") == "Terminé"
 
 
-def _as_model(t: Union[dict, object]):
-    """
-    Convert a raw dict or a model-like object to a Tournament model instance.
-    Leaves model as-is if already a Tournament. Minimal conversion for dict.
-    """
-    from chess_manager.models.tournament_models import Tournament
-
-    if isinstance(t, dict):
-        return Tournament.from_dict(t)
-    # If it already quacks like a Tournament (has to_dict), assume it's fine
-    if hasattr(t, "to_dict"):
-        return t
-    # Fallback: try to build from whatever attributes exist
-    return Tournament.from_dict(getattr(t, "__dict__", {}))
-
-
-def _as_dict(t: Union[dict, object]) -> dict:
-    """
-    Normalize a tournament (dict or model) to a dict for persistence.
-    """
-    if isinstance(t, dict):
-        return t
-    if hasattr(t, "to_dict"):
-        return t.to_dict()  # type: ignore[attr-defined]
-    return getattr(t, "__dict__", {})
-
 # ----------------------
 # Tournament operations
 # ----------------------
@@ -278,7 +257,7 @@ def _resume_tournament_flow(
     Resume an in-progress tournament (not finished). If the last round was
     partially entered, continue; otherwise start the next round.
     """
-    model = _as_model(tournament)
+    model = as_model(tournament)
     run_rounds_until_done(model, repo=repo)
     repo.save_tournament(model.to_dict())
 
@@ -288,7 +267,7 @@ def _show_summary(tournament: Union[dict, object]) -> None:
     Display the final tournament summary (supports co-winners, as implemented
     in round_views.display_final_summary).
     """
-    model = _as_model(tournament)
+    model = as_model(tournament)
     round_views.display_final_summary(model)
 
 
@@ -331,7 +310,7 @@ def _manage_tournament_player_menu(
         if name:
             fresh = repo.get_tournament_by_name(name)
             if fresh:
-                tournament = _as_dict(fresh)
+                tournament = as_dict(fresh)
 
         players_in_tournament = _extract_players_from_tournament(tournament, controller)
         current_stats = build_player_tournament_index([tournament])
@@ -416,7 +395,7 @@ def _manage_tournament_player_menu(
             # reload the latest snapshot
             fresh = repo.get_tournament_by_name(tournament.get("name", ""))
             if fresh:
-                tournament = _as_dict(fresh)
+                tournament = as_dict(fresh)
 
         elif action == "launch_disabled":
             player_views.display_error_message("Impossible de lancer : il faut au moins 8 joueurs.")
@@ -425,18 +404,18 @@ def _manage_tournament_player_menu(
             _resume_tournament_flow(repo, tournament)
             fresh = repo.get_tournament_by_name(tournament.get("name", ""))
             if fresh:
-                tournament = _as_dict(fresh)
+                tournament = as_dict(fresh)
 
         elif action == "summary":
             _show_summary(tournament)
             fresh = repo.get_tournament_by_name(tournament.get("name", ""))
             if fresh:
-                tournament = _as_dict(fresh)
+                tournament = as_dict(fresh)
 
         elif action == "description":
             # Load latest snapshot description, convert to model for setters/getters
             fresh = repo.get_tournament_by_name(tournament.get("name", "")) if tournament.get("name") else None
-            model = _as_model(fresh if fresh else tournament)
+            model = as_model(fresh if fresh else tournament)
 
             try:
                 manage_tournament_description(model, repo=repo)
@@ -448,7 +427,7 @@ def _manage_tournament_player_menu(
             # Refresh local dict after possible edits
             fresh = repo.get_tournament_by_name(tournament.get("name", ""))
             if fresh:
-                tournament = _as_dict(fresh)
+                tournament = as_dict(fresh)
 
         elif action == "quit":
             console.print("✅ Sauvegarde en cours et sortie du menu tournoi...")
@@ -577,7 +556,7 @@ def handle_main_menu(controller: PlayerController) -> None:
                 continue
 
             # Normalize for the submenu
-            current_tournament = _as_dict(selected)
+            current_tournament = as_dict(selected)
             _manage_tournament_player_menu(
                 tournaments_repo, current_tournament, controller
             )

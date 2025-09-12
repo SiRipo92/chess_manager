@@ -3,8 +3,36 @@ import re
 import unicodedata
 from datetime import datetime
 from rich.console import Console
+from typing import Union
 
 console = Console()
+
+
+def as_model(t: Union[dict, object]):
+    """
+    Convert a raw dict or a model-like object to a Tournament model instance.
+    Leaves model as-is if already a Tournament. Minimal conversion for dict.
+    """
+    from chess_manager.models.tournament_models import Tournament
+
+    if isinstance(t, dict):
+        return Tournament.from_dict(t)
+    # If it already quacks like a Tournament (has to_dict), assume it's fine
+    if hasattr(t, "to_dict"):
+        return t
+    # Fallback: try to build from whatever attributes exist
+    return Tournament.from_dict(getattr(t, "__dict__", {}))
+
+
+def as_dict(t: Union[dict, object]) -> dict:
+    """
+    Normalize a tournament (dict or model) to a dict for persistence.
+    """
+    if isinstance(t, dict):
+        return t
+    if hasattr(t, "to_dict"):
+        return t.to_dict()  # type: ignore[attr-defined]
+    return getattr(t, "__dict__", {})
 
 
 def datetime_formatting(timestamp: str | None):

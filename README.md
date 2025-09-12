@@ -150,7 +150,7 @@ TournamentController — launching rounds, entering/correcting results, provisio
 
   ```bash
   flake8 .
-  - ```
+  ```
 
 ## 📋 License
 
