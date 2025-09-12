@@ -2,6 +2,7 @@
 <br>[![Flake8](https://github.com/SiRipo92/chess_manager/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/SiRipo92/chess_manager/actions/workflows/lint.yml)
 <br>[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 <p>This project is an offline, console-based chess tournament manager built with Python using the MVC (Model-View-Controller) design pattern. It allows club managers to create and run chess tournaments, track players, scores, and generate tournament reports.
+
 ## 📁 Project Structure
 
 ```bash
@@ -16,7 +17,7 @@ chess_manager/                  # Project root
 │   ├── players/
 │   │   ├── players.json       # JSON data file with enrolled players
 │   ├── tournaments/
-│   │   ├── tournaments.json   # TOURNAMENT REPOSITORY - Persistent memory/json of all tournaments played
+│   │   ├── tournaments.json   # TOURNAMENT REPOSITORY - Persistent memory/json of all tournaments
 ├── main.py                    # CLI entry point
 ├── requirements.txt           # Python dependencies
 ├── .gitignore
