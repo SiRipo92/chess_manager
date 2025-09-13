@@ -28,10 +28,10 @@ def score_round(tournament: Tournament, rnd: Round) -> bool | None:
     }
 
     while pending:
-        left = len(pending)
+        matches_left = len(pending)
         console.print(
             f"[bold]Tournoi en cours (Round {rnd.round_number} / {tournament.number_rounds}). "
-            f"Il manque les résultats de {left} / {len(rnd.matches)} match(es).[/bold]"
+            f"Il manque les résultats de {matches_left} / {len(rnd.matches)} match(es).[/bold]"
         )
 
         # Menu of pending matches
