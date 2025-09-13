@@ -15,7 +15,7 @@ from chess_manager.controllers.match_controller import (
 console = Console()
 
 
-def score_round(tournament: Tournament, rnd: Round) -> bool:
+def score_round(tournament: Tournament, rnd: Round) -> bool | None:
     """
     Interactive scoring for a single round,
     Returns True if round confirmed; False if user aborted.
