@@ -3821,5 +3821,371 @@
         "DV20001"
       ]
     ]
+  },
+  {
+    "name": "tournament_20_marseille_2025-09-12",
+    "location": "marseille",
+    "start_date": "2025-09-12",
+    "end_date": "2025-09-12",
+    "started_at": "2025-09-12T22:45:25",
+    "finished_at": "2025-09-12T23:09:52",
+    "status": "Terminé",
+    "description": "",
+    "number_rounds": 4,
+    "current_round_number": 4,
+    "players": [
+      {
+        "last_name": "Armoran",
+        "first_name": "Georgina",
+        "birthdate": "2004-01-01",
+        "national_id": "NL09415",
+        "date_enrolled": "2025-08-21",
+        "match_history": [],
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Bernard",
+        "first_name": "Quentin",
+        "birthdate": "1990-10-31",
+        "national_id": "UP26163",
+        "date_enrolled": "2025-08-21",
+        "match_history": [],
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Bernard",
+        "first_name": "Sophie",
+        "birthdate": "1998-07-21",
+        "national_id": "AD00003",
+        "date_enrolled": "2025-03-01",
+        "match_history": [],
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Dupont",
+        "first_name": "George",
+        "birthdate": "1957-12-13",
+        "national_id": "BG10837",
+        "date_enrolled": "2025-08-21",
+        "match_history": [],
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Dupont",
+        "first_name": "Marie",
+        "birthdate": "1990-05-12",
+        "national_id": "AB00001",
+        "date_enrolled": "2025-01-15",
+        "match_history": [],
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Gegelarsouille",
+        "first_name": "Kisscool",
+        "birthdate": "1980-11-03",
+        "national_id": "GG06900",
+        "date_enrolled": "2025-09-08",
+        "match_history": [],
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Leclerc",
+        "first_name": "Auchan",
+        "birthdate": "1998-02-04",
+        "national_id": "AH37808",
+        "date_enrolled": "2025-08-21",
+        "match_history": [],
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Leroy",
+        "first_name": "Julien",
+        "birthdate": "1988-09-30",
+        "national_id": "AG00006",
+        "date_enrolled": "2025-06-12",
+        "match_history": [],
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Merkel",
+        "first_name": "Angela",
+        "birthdate": "1954-07-17",
+        "national_id": "AL99999",
+        "date_enrolled": "2025-09-12",
+        "match_history": [],
+        "tournaments_won": 0
+      }
+    ],
+    "rounds": [
+      {
+        "round_number": 1,
+        "name": "Round 1",
+        "start_time": "2025-09-12T22:45:25.570703",
+        "end_time": "2025-09-12T22:58:14",
+        "matches": [
+          {
+            "player1": "AB00001",
+            "player2": "AG00006",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "NL09415",
+            "player2": "BG10837",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "AD00003",
+            "player2": "AL99999",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          },
+          {
+            "player1": "UP26163",
+            "player2": "AH37808",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "GG06900",
+            "player2": null,
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "exempt",
+            "result2": null
+          }
+        ]
+      },
+      {
+        "round_number": 2,
+        "name": "Round 2",
+        "start_time": "2025-09-12T23:02:37.453482",
+        "end_time": "2025-09-12T23:07:44",
+        "matches": [
+          {
+            "player1": "NL09415",
+            "player2": null,
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "exempt",
+            "result2": null
+          },
+          {
+            "player1": "GG06900",
+            "player2": "AH37808",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          },
+          {
+            "player1": "BG10837",
+            "player2": "AB00001",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "AL99999",
+            "player2": "AG00006",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "AD00003",
+            "player2": "UP26163",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          }
+        ]
+      },
+      {
+        "round_number": 3,
+        "name": "Round 3",
+        "start_time": "2025-09-12T23:07:45.422587",
+        "end_time": "2025-09-12T23:07:53",
+        "matches": [
+          {
+            "player1": "AG00006",
+            "player2": null,
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "exempt",
+            "result2": null
+          },
+          {
+            "player1": "AB00001",
+            "player2": "GG06900",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "AH37808",
+            "player2": "AL99999",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "NL09415",
+            "player2": "AD00003",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          },
+          {
+            "player1": "BG10837",
+            "player2": "UP26163",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          }
+        ]
+      },
+      {
+        "round_number": 4,
+        "name": "Round 4",
+        "start_time": "2025-09-12T23:08:09.666675",
+        "end_time": "2025-09-12T23:08:24",
+        "matches": [
+          {
+            "player1": "AG00006",
+            "player2": null,
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "exempt",
+            "result2": null
+          },
+          {
+            "player1": "AH37808",
+            "player2": "AB00001",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "GG06900",
+            "player2": "AD00003",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "BG10837",
+            "player2": "AL99999",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "NL09415",
+            "player2": "UP26163",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          }
+        ]
+      }
+    ],
+    "scores": {
+      "NL09415": 2.0,
+      "UP26163": 1.5,
+      "AD00003": 2.5,
+      "BG10837": 1.5,
+      "AB00001": 2.0,
+      "GG06900": 2.5,
+      "AH37808": 3.5,
+      "AG00006": 2.0,
+      "AL99999": 2.5
+    },
+    "past_pairs": [
+      [
+        "AL99999",
+        "AG00006"
+      ],
+      [
+        "GG06900",
+        "AD00003"
+      ],
+      [
+        "GG06900",
+        "AB00001"
+      ],
+      [
+        "NL09415",
+        "AD00003"
+      ],
+      [
+        "AL99999",
+        "AH37808"
+      ],
+      [
+        "BG10837",
+        "NL09415"
+      ],
+      [
+        "BG10837",
+        "UP26163"
+      ],
+      [
+        "NL09415",
+        "UP26163"
+      ],
+      [
+        "BG10837",
+        "AB00001"
+      ],
+      [
+        "AB00001",
+        "AG00006"
+      ],
+      [
+        "BG10837",
+        "AL99999"
+      ],
+      [
+        "UP26163",
+        "AD00003"
+      ],
+      [
+        "GG06900",
+        "AH37808"
+      ],
+      [
+        "AB00001",
+        "AH37808"
+      ],
+      [
+        "UP26163",
+        "AH37808"
+      ],
+      [
+        "AL99999",
+        "AD00003"
+      ]
+    ]
   }
 ]
