@@ -11,7 +11,7 @@ console = Console()
 
 def display_round_pairings(rnd: Round) -> None:
     """Affiche la table d’appariements d’un round (noms + IDs)."""
-    table = Table(title=f"Appariements - Round {rnd.round_number}")
+    table = Table(title=f"Appariements - Tour {rnd.round_number}")
     table.add_column("Match #", justify="right")
     table.add_column("Joueur 1")
     table.add_column("Joueur 2 / Exempt")
@@ -49,7 +49,7 @@ def display_round_results(round):
 def display_standings(tournament) -> None:
     """Provisional ranking (called again after each confirmed input for round)."""
     table = Table(
-        title=f"Classement provisoire (Round {tournament.current_round_number} / {tournament.number_rounds})"
+        title=f"Classement provisoire (Tour {tournament.current_round_number} / {tournament.number_rounds})"
     )
     table.add_column("Rang", justify="right")
     table.add_column("Joueur")

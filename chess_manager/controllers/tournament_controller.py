@@ -12,18 +12,37 @@ from chess_manager.views.tournament_views import (
     display_tournament_description,
     prompt_description_menu,
     prompt_edit_description,
-    confirm_clear_description
+    confirm_clear_description,
+    announce_tiebreak_start,
 )
 
 console = Console()
 
 
-def launch_first_round_flow(tournament_dict: Dict) -> Tournament:
-    """
-    Construit un Tournament depuis un dict repo, lance le 1er round (pairings au niveau modèle),
-    affiche les appariements, et retourne le modèle prêt à être scoré.
-    """
+# Helper function to remove duplicated lines
+def _score_and_persist_round(model: Tournament, rnd: Round, repo=None, persist: bool = True) -> bool:
+    display_round_pairings(rnd)
+    try:
+        done = score_round(model, rnd)
+    except KeyboardInterrupt:
+        console.print("[yellow]Saisie interrompue par l'utilisateur.[/yellow]")
+        return False
+    except Exception as e:
+        console.print(f"[red]Erreur pendant la saisie des résultats : {e}[/red]")
+        return False
 
+    if not done:
+        return False
+
+    if persist and repo is not None:
+        try:
+            repo.save_tournament(model.to_dict())
+        except Exception as e:
+            console.print(f"[red]Échec de la sauvegarde après un tour : {e}[/red]")
+    return True
+
+# Flows for launching tournament (First round and then all subsequent rounds)
+def launch_first_round_flow(tournament_dict: Dict) -> Tournament:
     model = Tournament.from_dict(tournament_dict)
     if model.roster_size() < 8:
         raise ValueError("Il faut au moins 8 joueurs pour démarrer un tournoi.")
@@ -43,38 +62,24 @@ def launch_first_round_flow(tournament_dict: Dict) -> Tournament:
         raise RuntimeError(f"Erreur lors de la création du 1er tour : {e}") from e
 
     model.repo_name = tournament_dict.get("name", "") or model.repo_name
-    display_round_pairings(first_round)
     return model
 
 
-def run_rounds_until_done(model: Tournament, repo=None) -> None:
-    """
-    Score the current round, then keep creating/scoring next rounds until done.
-    Before finishing, offer to edit description. Then finish, save, recap.
-    """
-    # Score the round that was just created/launched
+def run_rounds_until_done(model: Tournament, repo=None, player_controller=None) -> None:
+    """Score current round, play remaining scheduled rounds, then auto tiebreaks if needed."""
+    # 1) Score the round that already exists (from launch)
     try:
         current = model.rounds[-1]
     except (IndexError, AttributeError):
         console.print("[red]Aucun round à scorer.[/red]")
         return
-
-    try:
-        done = score_round(model, current)
-    except KeyboardInterrupt:
-        console.print("[yellow]Saisie interrompue par l'utilisateur.[/yellow]")
-        return
-    except Exception as e:
-        console.print(f"[red]Erreur pendant la saisie des résultats : {e}[/red]")
+    if not _score_and_persist_round(model, current, repo):
         return
 
-    if not done:
-        return
-
-    # Next rounds
+    # 2) Play all scheduled rounds (no tiebreaks here)
     while model.current_round_number < model.number_rounds:
         try:
-            next_round = model.start_next_round()
+            nxt = model.start_next_round()
         except ValueError as e:
             console.print(f"[red]Impossible de créer le tour suivant : {e}[/red]")
             break
@@ -82,28 +87,35 @@ def run_rounds_until_done(model: Tournament, repo=None) -> None:
             console.print(f"[red]Erreur interne lors de la création d'un nouveau tour : {e}[/red]")
             break
 
-        display_round_pairings(next_round)
+        if not _score_and_persist_round(model, nxt, repo):
+            return
+
+    # 3) AFTER scheduled rounds: automatic tie-break rounds until a single winner
+    tiebreak_index = 1
+    while model.have_first_place_tie():
+        leaders = model.tied_leaders()
+        top_score = max(model.scores.get(pid, 0.0) for pid in leaders)
+        # Pretty labels for the announce
+        by_id = {p.national_id: p for p in model.players}
+        labels = [
+            f"{by_id[pid].last_name.upper()}, {by_id[pid].first_name} ({pid})"
+            if pid in by_id else pid
+            for pid in leaders
+        ]
+        announce_tiebreak_start(labels, top_score, tiebreak_index)
 
         try:
-            done = score_round(model, next_round)
-        except KeyboardInterrupt:
-            console.print("[yellow]Saisie interrompue par l'utilisateur.[/yellow]")
-            return
+            tb_round = model.start_tiebreak_round(leaders)
         except Exception as e:
-            console.print(f"[red]Erreur pendant la saisie des résultats : {e}[/red]")
+            console.print(f"[red]Impossible de créer un round de départage : {e}[/red]")
+            break
+
+        if not _score_and_persist_round(model, tb_round, repo):
             return
 
-        if not done:
-            return
+        tiebreak_index += 1
 
-        # Persist after each completed round (best effort, non-fatal on failure)
-        if repo is not None:
-            try:
-                repo.save_tournament(model.to_dict())
-            except Exception as e:
-                console.print(f"[red]Échec de la sauvegarde après un tour : {e}[/red]")
-
-    # Offer to edit description before finishing
+    # 4) Optional description edit before finishing
     try:
         wants_desc = questionary.confirm(
             "Souhaitez-vous ajouter/modifier la description avant de clôturer le tournoi ?"
@@ -116,7 +128,22 @@ def run_rounds_until_done(model: Tournament, repo=None) -> None:
     if wants_desc:
         manage_tournament_description(model, repo=repo)
 
-    # Finish + save + recap
+    # 5) Bumps tournaments_won in player model up for winner
+    wid = model.compute_winner_id()
+    if wid:
+        model.winner_id = wid
+        if player_controller is not None:
+            try:
+                players = player_controller.load_players()
+                by_id = {p.national_id: p for p in players}
+                if wid in by_id:
+                    by_id[wid].record_tournament_win()
+                    player_controller.save_players(list(by_id.values()))
+            except Exception as e:
+                console.print(f"[yellow]Avertissement : impossible de mettre à jour 'tournaments_won' : {e}[/yellow]")
+
+
+    # 6) Finish + save + recap
     model.mark_finished()
     if repo is not None:
         try:

@@ -62,6 +62,9 @@ class Tournament:
         # Repository-facing persisted name (e.g., "tournament_1_nanterre_2025-08-15")
         self.repo_name: str = ""
 
+        # Stores winner
+        self.winner_id: str = ""
+
     # ----------------------
     # Basic derived props
     # ----------------------
@@ -172,6 +175,10 @@ class Tournament:
         if not self.finished_at:
             self.finished_at = datetime.now().isoformat(timespec="seconds")
 
+    def compute_winner_id(self) -> Optional[str]:
+        leaders = self.tied_leaders()
+        return leaders[0] if len(leaders) == 1 else None
+
     # -------------------------
     # Inscription des joueurs
     # -------------------------
@@ -266,7 +273,7 @@ class Tournament:
 
         self.mark_launched()
         self.current_round_number = 1
-        round = Round(self.current_round_number)
+        rnd = Round(self.current_round_number)
 
         pool = list(self.players)
         random.shuffle(pool)
@@ -275,19 +282,15 @@ class Tournament:
         while i + 1 < len(pool):
             p1, p2 = pool[i], pool[i + 1]
             match = Match(p1, p2)
-            round.add_match(match)
+            rnd.add_match(match)
             self.remember_pair(p1.national_id, p2.national_id)
             i += 2
 
         if len(pool) % 2 == 1:
-            exempt_player = pool[-1]
-            exempt_match = Match(exempt_player, None)
-            exempt_match.set_result_by_code("E")
-            round.add_match(exempt_match)
-            self.apply_match_points(exempt_match)
+            self.add_exempt_bye(rnd, pool[-1])
 
-        self.rounds.append(round)
-        return round
+        self.rounds.append(rnd)
+        return rnd
 
     def start_next_round(self) -> Round:
         """
@@ -314,17 +317,13 @@ class Tournament:
             raise ValueError("Nombre de tours maximum atteint.")
 
         self.current_round_number += 1
-        round = Round(self.current_round_number)
+        rnd = Round(self.current_round_number)
 
         sorted_ids = self.sorted_player_ids_by_score()
 
         if len(sorted_ids) % 2 == 1:
             exempt_id = sorted_ids.pop()
-            exempt_player = self.get_player_by_id(exempt_id)
-            exempt_match = Match(exempt_player, None)
-            exempt_match.set_result_by_code("E")
-            round.add_match(exempt_match)
-            self.apply_match_points(exempt_match)
+            self.add_exempt_bye_by_id(rnd, exempt_id)
 
         used: Set[str] = set()
         i = 0
@@ -345,14 +344,75 @@ class Tournament:
             p1 = self.get_player_by_id(p1_id)
             p2 = self.get_player_by_id(p2_id)
             match = Match(p1, p2)
-            round.add_match(match)
+            rnd.add_match(match)
             self.remember_pair(p1_id, p2_id)
             used.add(p1_id)
             used.add(p2_id)
             i += 1
 
-        self.rounds.append(round)
-        return round
+        self.rounds.append(rnd)
+        return rnd
+
+    # --- Leaders / tie detection / tie breaking round (NEW) ---
+    def tied_leaders(self) -> list[str]:
+        """Return national_ids of players with the maximal score."""
+        if not self.players:
+            return []
+        top_score = max(self.scores.get(p.national_id, 0.0) for p in self.players)
+        return [p.national_id for p in self.players if self.scores.get(p.national_id, 0.0) == top_score]
+
+    def have_first_place_tie(self) -> bool:
+        """Returns a boolean flag indicating if a tie breaking rounds needs to take place."""
+        return len(self.tied_leaders()) > 1
+
+    def start_tiebreak_round(self, leader_ids: list[str])-> Round:
+        """
+        Create a new Round pairing only the given candidates (single-elimination style).
+        - Shuffle candidates.
+        - If odd, last gets an EXEMPT (1.0 point).
+        - No rematch-avoidance: playoffs are allowed to rematch.
+        """
+        # Normalisation and avoids duplicated ids in list
+        if not leader_ids:
+            raise ValueError("Aucun départage nécessaire : pas d’égalité en tête.")
+        ids_norm = []
+        seen = set()
+        for pid in leader_ids:
+            pid = str(pid).strip().upper()
+            if pid and pid not in seen:
+                ids_norm.append(pid)
+                seen.add(pid)
+
+        if len(ids_norm) < 2:
+            raise ValueError("Départage inutile : un seul joueur est en tête.")
+
+        # Check that all IDs correspond to the current roster list in tournament
+        for pid in ids_norm:
+            try:
+                self.get_player_by_id(pid)
+            except KeyError:
+                raise KeyError(f"Joueur inconnu dans ce tournoi : {pid}")
+
+        # Create tiebreak round
+        self.current_round_number += 1
+        rnd = Round(self.current_round_number)
+
+        # Random shuffle
+        random.shuffle(ids_norm)
+
+        # Bye/Exempt player handling in tiebreak round
+        if len(ids_norm) % 2 == 1:
+            bye_id = ids_norm.pop()
+            self.add_exempt_bye_by_id(rnd, bye_id)
+
+        # Matching 2 by 2 (authorizes rematches)
+        for i in range(0, len(ids_norm), 2):
+            p1 = self.get_player_by_id(ids_norm[i])
+            p2 = self.get_player_by_id(ids_norm[i + 1])
+            rnd.add_match(Match(p1, p2))
+
+        self.rounds.append(rnd)
+        return rnd
 
     def update_scores_from_round(self, tournament_round: Round) -> None:
         """
@@ -393,6 +453,7 @@ class Tournament:
             "rounds": [r.to_dict() for r in self.rounds],
             "scores": dict(self.scores),
             "past_pairs": [list(pair) for pair in self.past_pairs],
+            "winner_id": self.winner_id,
         }
 
     @classmethod
@@ -447,6 +508,9 @@ class Tournament:
             ids = [str(x) for x in pair]
             if len(ids) == 2:
                 tournament.past_pairs.add(frozenset(ids))
+
+        # tournament winner
+        tournament.winner_id = data.get("winner_id", "")
 
         return tournament
 
@@ -516,7 +580,7 @@ class Tournament:
         result: List[str] = []
         for sc in sorted_scores:
             ids = buckets[sc]
-            random.shuffle(ids)   # shuffle inside same-score bucket (Swiss-like)
+            random.shuffle(ids)   # randomness only among equal-score players
             result.extend(ids)
         return result
 
@@ -568,3 +632,14 @@ class Tournament:
         if match.player2:
             id2 = match.player2.national_id
             self.scores[id2] = self.scores.get(id2, 0.0) + float(match.score2 or 0.0)
+
+    def add_exempt_bye(self, rnd: Round, player: Player) -> None:
+        """Create an EXEMPT match (bye) for `player`, credit 1.0, attach to `rnd`."""
+        m = Match(player, None)
+        m.set_result_by_code("E")  # EXEMPT -> 1.0
+        rnd.add_match(m)
+        self.apply_match_points(m)
+
+    def add_exempt_bye_by_id(self, rnd: Round, player_id: str) -> None:
+        """Convenience: same as above but starting from a national_id."""
+        self.add_exempt_bye(rnd, self.get_player_by_id(player_id))

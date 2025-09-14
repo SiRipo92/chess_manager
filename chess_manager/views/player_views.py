@@ -255,47 +255,60 @@ def display_player_brief_info(player: Player) -> None:
     console.print(table)
 
 
-def display_all_players(players, scope="global", stats_index=None, show_enrollment=False):
-    """Affiche les joueurs (stats facultatives via stats_index)."""
+def display_all_players(
+    players,
+    scope: str = "global",
+    stats_index=None,
+    show_enrollment: bool = False,
+    mode: str = "roster",  # "roster" | "summary" | "directory"
+):
+    """
+    Affiche les joueurs.
+      - mode="roster"   : pour un tournoi en cours/début (liste simple)
+      - mode="summary"  : résumé léger avec points (fin de tournoi si besoin)
+      - mode="directory": vue globale (annuaire) sans colonnes inutiles
+    """
     if not players:
         console.print("[yellow]Aucun joueur à afficher.[/yellow]")
         return
 
-    title = "Joueurs globaux (base complète)" if scope == "global" else "Joueurs du tournoi courant"
-    table = Table(title=title)
+    titles = {
+        "roster": "Joueurs du tournoi courant",
+        "summary": "Joueurs — résumé",
+        "directory": "Joueurs globaux (base complète)",
+    }
+    table = Table(title=titles.get(mode, "Joueurs"))
 
+    # ── Colonnes par mode (plus de 'Matchs' ni 'Tournois')
     table.add_column("#", style="cyan", justify="right", no_wrap=True)
     table.add_column("Nom complet", overflow="fold")
     table.add_column("ID", no_wrap=True)
-    table.add_column("Âge", justify="right", no_wrap=True)
-    table.add_column("Matchs", justify="right", no_wrap=True)
-    table.add_column("Points", justify="right", no_wrap=True)
-    table.add_column("Tournois", justify="right", no_wrap=True)   # participations
-    table.add_column("Victoires", justify="right", no_wrap=True)  # victoires ou égalités 1ère place
 
-    if show_enrollment:
-        table.add_column("Inscription", no_wrap=True)
-
-    for idx, player in enumerate(players, 1):
-        stats = (stats_index or {}).get(player.national_id, {})
-
-        total_matches = stats.get("matchs", len(player.match_history or []))
-        total_points = stats.get("points", player.get_total_score())
-        participations = stats.get("participations", 0)
-        victoires = stats.get("victoires", stats.get("wins", 0))  # fallback if a caller still provides 'wins'
-
-        row = [
-            str(idx),
-            f"{player.last_name.upper()}, {player.first_name}",
-            player.national_id,
-            str(player.age),
-            str(total_matches),
-            f"{float(total_points):.1f}",
-            str(participations),
-            str(victoires),
-        ]
+    if mode in ("roster", "directory"):
+        table.add_column("Âge", justify="right", no_wrap=True)
         if show_enrollment:
-            row.append(player.date_enrolled)
+            table.add_column("Inscription", no_wrap=True)
+
+    if mode == "summary":
+        # On montre seulement les points (quand utile)
+        table.add_column("Points", justify="right", no_wrap=True)
+
+    for idx, p in enumerate(players, 1):
+        row = [str(idx), f"{p.last_name.upper()}, {p.first_name}", p.national_id]
+
+        if mode in ("roster", "directory"):
+            row.append(str(p.age))
+            if show_enrollment:
+                row.append(getattr(p, "date_enrolled", "") or "—")
+
+        if mode == "summary":
+            # source des points : stats_index (si fourni) sinon total joueur
+            pts = None
+            if stats_index:
+                pts = (stats_index or {}).get(p.national_id, {}).get("points")
+            if pts is None:
+                pts = p.get_total_score()
+            row.append(f"{float(pts):.1f}")
 
         table.add_row(*row)
     console.print(table)

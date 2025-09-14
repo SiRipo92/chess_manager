@@ -224,7 +224,7 @@ def _is_finished(t: dict | object) -> bool:
 
 
 def _launch_tournament_flow(
-        repo: TournamentRepository, tournament: dict
+        repo: TournamentRepository, tournament: dict, controller: PlayerController
 ) -> None:
     """
     Build a Tournament model from a dict, confirm, create pairings,
@@ -244,21 +244,21 @@ def _launch_tournament_flow(
     repo.save_tournament(model.to_dict())
 
     # Run scoring loop for all rounds (resumable if user quits mid-way)
-    run_rounds_until_done(model, repo=repo)
+    run_rounds_until_done(model, repo=repo, player_controller=controller)
 
     # Persist final state
     repo.save_tournament(model.to_dict())
 
 
 def _resume_tournament_flow(
-        repo: TournamentRepository, tournament: Union[dict, object]
+        repo: TournamentRepository, tournament: Union[dict, object], controller: PlayerController
 ) -> None:
     """
     Resume an in-progress tournament (not finished). If the last round was
     partially entered, continue; otherwise start the next round.
     """
     model = as_model(tournament)
-    run_rounds_until_done(model, repo=repo)
+    run_rounds_until_done(model, repo=repo, player_controller=controller)
     repo.save_tournament(model.to_dict())
 
 
@@ -315,18 +315,24 @@ def _manage_tournament_player_menu(
         players_in_tournament = _extract_players_from_tournament(tournament, controller)
         current_stats = build_player_tournament_index([tournament])
 
-        console.print("\n[bold]Joueurs du tournoi actuel :[/bold]")
-        player_views.display_all_players(
-            players_in_tournament,
-            scope="tournament",
-            stats_index=current_stats
-        )
-        console.print()
-
         # --- state flags
         started = _is_started(tournament)
         finished = _is_finished(tournament)
         enough = len(players_in_tournament) >= 8
+
+        # Show roster/summary table only when NOT finished (avoid duplicate tables in recap)
+        if not finished:
+            console.print("\n[bold]Joueurs du tournoi actuel :[/bold]")
+            player_views.display_all_players(
+                players_in_tournament,
+                scope="tournament",
+                # before start: "roster" (Age, Inscription)
+                # during tournament: "summary" (Points only)
+                mode=("roster" if not started else "summary"),
+                stats_index=(current_stats if started else None),
+                show_enrollment=(not started),
+            )
+            console.print()
 
         # Unified status line (always shown)
         console.print(f"[dim]Statut : {_status_label_plain(tournament)}[/dim]")
@@ -391,7 +397,7 @@ def _manage_tournament_player_menu(
                 console.print("[yellow]Le joueur {} est déjà dans le tournoi.[/yellow]".format(new_player.national_id))
 
         elif action == "launch":
-            _launch_tournament_flow(repo, tournament)
+            _launch_tournament_flow(repo, tournament, controller)
             # reload the latest snapshot
             fresh = repo.get_tournament_by_name(tournament.get("name", ""))
             if fresh:
@@ -401,7 +407,7 @@ def _manage_tournament_player_menu(
             player_views.display_error_message("Impossible de lancer : il faut au moins 8 joueurs.")
 
         elif action == "resume":
-            _resume_tournament_flow(repo, tournament)
+            _resume_tournament_flow(repo, tournament, controller)
             fresh = repo.get_tournament_by_name(tournament.get("name", ""))
             if fresh:
                 tournament = as_dict(fresh)
@@ -457,17 +463,13 @@ def handle_main_menu(controller: PlayerController) -> None:
     while True:
         # Show global players + live stats from all tournaments
         global_players = controller.load_players()
-
-        all_tournaments = tournaments_repo.load_all_tournaments()
-        stats_index = build_player_tournament_index(all_tournaments)
-
         console.print("\n" + "-" * 60)
         console.print("[bold cyan]Joueurs globaux disponibles[/bold cyan]")
         if global_players:
             player_views.display_all_players(
                 global_players,
                 scope="global",
-                stats_index=stats_index
+                mode="directory"
             )
             console.print()  # newline so the Questionary prompt appears below the table cleanly
         else:
