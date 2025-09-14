@@ -10,6 +10,19 @@ from chess_manager.utils.tournament_utils import datetime_formatting
 console = Console()
 
 
+# ----------- Announce any tiebreak rounds needed and launch automatically
+def announce_tiebreak_start(candidates: List[str], score: float, index: int) -> None:
+    """
+    Affiche un bandeau + tableau des joueurs à égalité et annonce le départage automatique.
+    """
+    table = Table(title=f"Départage #{index} — {len(candidates)} joueur(s) à {score:.1f} pt(s)")
+    table.add_column("#", justify="right")
+    table.add_column("Candidat")
+    for i, label in enumerate(candidates, 1):
+        table.add_row(str(i), label)
+    console.print(table)
+    console.print("[bold cyan]Lancement automatique du round de départage...[/bold cyan]")
+
 def confirm_launch_tournament(tournament_name: str, count: int) -> bool:
     """Yes/No before launching with the listed players."""
     return bool(questionary.confirm(
@@ -254,16 +267,17 @@ def display_tournament_recap(tournament) -> None:
     """
     console.print(f"\n[bold green]✅ Tournoi terminé : {tournament.name}[/bold green]")
     meta = Table(show_header=False, box=None)
+    meta.add_column("Champ", style="bold")
+    meta.add_column("Valeur", overflow="fold")
     meta.add_row("Lieu :", tournament.location)
     meta.add_row("Statut :", getattr(tournament, "status", ""))
     meta.add_row("Date (début) :", tournament.start_date or "—")
     meta.add_row("Date (fin)   :", tournament.end_date or "—")
     meta.add_row("Heure (début):", datetime_formatting(getattr(tournament, "started_at", "")) or "—")
     meta.add_row("Heure (fin)  :", datetime_formatting(getattr(tournament, "finished_at", "")) or "—")
-    console.print(meta)
+    meta.add_row("Description :", getattr(tournament, "description", "") or "—")
 
-    # Show the description in the recap
-    display_tournament_description(tournament)
+    console.print(meta)
 
     # Final standings
     players_sorted = display_final_standings(tournament)
@@ -282,4 +296,3 @@ def display_tournament_recap(tournament) -> None:
         matrix.add_row(*row)
 
     console.print(matrix)
-    console.print("Le tournoi est terminé. Retour au menu principale ... ")

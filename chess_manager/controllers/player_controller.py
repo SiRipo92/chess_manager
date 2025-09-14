@@ -292,15 +292,12 @@ class PlayerController:
 
             if choice == "1":  # view players
                 players = self.load_players()
-                # compute live stats from all tournaments
-                tournaments_repo = TournamentRepository()
-                all_tournaments = tournaments_repo.load_all_tournaments()
-                stats_index = build_player_tournament_index(all_tournaments)
 
                 player_views.display_all_players(
                     players,
                     scope="global",
-                    stats_index=stats_index
+                    mode="directory",
+                    show_enrollment=True
                 )
 
             elif choice == "2":  # add new player
