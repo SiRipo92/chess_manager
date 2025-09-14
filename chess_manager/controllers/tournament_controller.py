@@ -41,6 +41,7 @@ def _score_and_persist_round(model: Tournament, rnd: Round, repo=None, persist: 
             console.print(f"[red]Échec de la sauvegarde après un tour : {e}[/red]")
     return True
 
+
 # Flows for launching tournament (First round and then all subsequent rounds)
 def launch_first_round_flow(tournament_dict: Dict) -> Tournament:
     model = Tournament.from_dict(tournament_dict)
@@ -55,11 +56,14 @@ def launch_first_round_flow(tournament_dict: Dict) -> Tournament:
         raise RuntimeError("Lancement annulé par l'utilisateur.")
 
     try:
-        first_round: Round = model.start_first_round()
+        model.start_first_round()  # just call it; don't capture
     except ValueError as e:
         raise ValueError(f"Impossible de lancer le 1er tour : {e}") from e
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la création du 1er tour : {e}") from e
+
+    model.repo_name = tournament_dict.get("name", "") or model.repo_name
+    return model
 
     model.repo_name = tournament_dict.get("name", "") or model.repo_name
     return model
@@ -141,7 +145,6 @@ def run_rounds_until_done(model: Tournament, repo=None, player_controller=None) 
                     player_controller.save_players(list(by_id.values()))
             except Exception as e:
                 console.print(f"[yellow]Avertissement : impossible de mettre à jour 'tournaments_won' : {e}[/yellow]")
-
 
     # 6) Finish + save + recap
     model.mark_finished()
