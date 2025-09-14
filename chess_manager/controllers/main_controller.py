@@ -465,13 +465,17 @@ def handle_main_menu(controller: PlayerController) -> None:
         global_players = controller.load_players()
         console.print("\n" + "-" * 60)
         console.print("[bold cyan]Joueurs globaux disponibles[/bold cyan]")
+
+        all_tournaments = tournaments_repo.load_all_tournaments()
+        stats_index = build_player_tournament_index(all_tournaments)
         if global_players:
             player_views.display_all_players(
                 global_players,
                 scope="global",
-                mode="directory"
+                mode="directory",
+                stats_index=stats_index,
             )
-            console.print()  # newline so the Questionary prompt appears below the table cleanly
+            console.print()
         else:
             console.print("[yellow]Aucun joueur global trouvé. Ajoutez-en ou importez un fichier.[/yellow]")
 

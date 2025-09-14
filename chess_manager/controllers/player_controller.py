@@ -3,9 +3,9 @@ import os
 import sys
 from typing import List, Optional, Tuple
 from rich.console import Console
-from chess_manager.models.player_models import Player
 from chess_manager.models.tournament_repository import TournamentRepository
 from chess_manager.utils.tournament_utils import build_player_tournament_index
+from chess_manager.models.player_models import Player
 from chess_manager.constants.player_fields import VALIDATION_MAP, FIELD_LABELS
 from chess_manager.views import player_views
 
@@ -293,12 +293,20 @@ class PlayerController:
             if choice == "1":  # view players
                 players = self.load_players()
 
-                player_views.display_all_players(
-                    players,
-                    scope="global",
-                    mode="directory",
-                    show_enrollment=True
-                )
+                # live aggregated stats across all tournaments
+                repo = TournamentRepository()
+                all_tournaments = repo.load_all_tournaments()
+                stats_index = build_player_tournament_index(all_tournaments)
+
+                if players:
+                    player_views.display_all_players(
+                        players,
+                        scope="global",
+                        mode="directory",
+                        stats_index=stats_index,  # <- enables Points cumulés & Tournois gagnés
+                    )
+                else:
+                    console.print("[yellow]Aucun joueur global trouvé.[/yellow]")
 
             elif choice == "2":  # add new player
                 self.handle_add_new_player()

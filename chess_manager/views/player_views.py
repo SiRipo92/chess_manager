@@ -257,60 +257,78 @@ def display_player_brief_info(player: Player) -> None:
 
 def display_all_players(
     players,
-    scope: str = "global",
-    stats_index=None,
-    show_enrollment: bool = False,
-    mode: str = "roster",  # "roster" | "summary" | "directory"
+    scope: str = "global",  # "global" | "tournament"
+    mode: str = "directory",  # "directory" | "roster" | "summary"
+    stats_index: dict | None = None,  # id -> {"points": float, "victoires": int, ...}
+    show_enrollment: bool = False  # only useful for tournament roster
 ):
     """
-    Affiche les joueurs.
-      - mode="roster"   : pour un tournoi en cours/début (liste simple)
-      - mode="summary"  : résumé léger avec points (fin de tournoi si besoin)
-      - mode="directory": vue globale (annuaire) sans colonnes inutiles
+    Display the players
+    - scope="global", mode="directory": #, Nom, ID, Âge, Points cumulés, Tournois gagnés
+    - scope="tournament", mode="roster": #, Nom, ID, Âge, (Inscription si demandé)
+    - scope="tournament", mode="summary": #, Nom, ID, Âge, Points (du tournoi en cours via stats_index)
     """
     if not players:
         console.print("[yellow]Aucun joueur à afficher.[/yellow]")
         return
 
-    titles = {
-        "roster": "Joueurs du tournoi courant",
-        "summary": "Joueurs — résumé",
-        "directory": "Joueurs globaux (base complète)",
-    }
-    table = Table(title=titles.get(mode, "Joueurs"))
+    title = (
+        "Joueurs globaux (base complète)"
+        if scope == "global"
+        else "Joueurs du tournoi courant"
+    )
+    table = Table(title=title)
 
-    # ── Colonnes par mode (plus de 'Matchs' ni 'Tournois')
+    # Always
     table.add_column("#", style="cyan", justify="right", no_wrap=True)
     table.add_column("Nom complet", overflow="fold")
     table.add_column("ID", no_wrap=True)
+    table.add_column("Âge", justify="right", no_wrap=True)
 
-    if mode in ("roster", "directory"):
-        table.add_column("Âge", justify="right", no_wrap=True)
-        if show_enrollment:
-            table.add_column("Inscription", no_wrap=True)
+    # Conditional columns
+    show_points_and_wins_global = (scope == "global" and mode == "directory")
+    show_points_tournament = (scope == "tournament" and mode == "summary")
+    show_inscription = (scope == "tournament" and mode == "roster" and show_enrollment)
 
-    if mode == "summary":
-        # On montre seulement les points (quand utile)
+    if show_points_and_wins_global:
+        table.add_column("Score", justify="right", no_wrap=False)
+        table.add_column("Victoires", justify="right", no_wrap=False)
+
+    if show_points_tournament:
         table.add_column("Points", justify="right", no_wrap=True)
 
+    if show_inscription:
+        table.add_column("Inscription", no_wrap=True)
+
+    # Rows
     for idx, p in enumerate(players, 1):
-        row = [str(idx), f"{p.last_name.upper()}, {p.first_name}", p.national_id]
+        sid = p.national_id
+        stats = (stats_index or {}).get(sid, {})
 
-        if mode in ("roster", "directory"):
-            row.append(str(p.age))
-            if show_enrollment:
-                row.append(getattr(p, "date_enrolled", "") or "—")
+        row = [
+            str(idx),
+            f"{p.last_name.upper()}, {p.first_name}",
+            sid,
+            str(p.age),
+        ]
 
-        if mode == "summary":
-            # source des points : stats_index (si fourni) sinon total joueur
-            pts = None
-            if stats_index:
-                pts = (stats_index or {}).get(p.national_id, {}).get("points")
-            if pts is None:
-                pts = p.get_total_score()
-            row.append(f"{float(pts):.1f}")
+        if show_points_and_wins_global:
+            # Use aggregated stats when available; fallback to player.tournaments_won for wins.
+            points_total = float(stats.get("points", 0.0))
+            wins_total = int(stats.get("victoires", getattr(p, "tournaments_won", 0)))
+            row.append(f"{points_total:.1f}")
+            row.append(str(wins_total))
+
+        if show_points_tournament:
+            # Points within the current tournament (stats_index should be built from that tournament)
+            points_now = float(stats.get("points", 0.0))
+            row.append(f"{points_now:.1f}")
+
+        if show_inscription:
+            row.append(getattr(p, "date_enrolled", ""))
 
         table.add_row(*row)
+
     console.print(table)
 
 # --------------------

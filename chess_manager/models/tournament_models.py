@@ -365,7 +365,7 @@ class Tournament:
         """Returns a boolean flag indicating if a tie breaking rounds needs to take place."""
         return len(self.tied_leaders()) > 1
 
-    def start_tiebreak_round(self, leader_ids: list[str])-> Round:
+    def start_tiebreak_round(self, leader_ids: list[str]) -> Round:
         """
         Create a new Round pairing only the given candidates (single-elimination style).
         - Shuffle candidates.

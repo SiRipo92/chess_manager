@@ -23,6 +23,7 @@ def announce_tiebreak_start(candidates: List[str], score: float, index: int) -> 
     console.print(table)
     console.print("[bold cyan]Lancement automatique du round de départage...[/bold cyan]")
 
+
 def confirm_launch_tournament(tournament_name: str, count: int) -> bool:
     """Yes/No before launching with the listed players."""
     return bool(questionary.confirm(
