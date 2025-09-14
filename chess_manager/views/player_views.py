@@ -185,7 +185,7 @@ def prompt_new_value_for_field(attr_key: str) -> Optional[str]:
         return raw
 
 
-def confirm_field_change(label_fr: str, ancien: str, nouveau: str) -> bool:
+def confirm_field_change(label_fr: str, old: str, new: str) -> bool:
     """
     Confirm a single field change before applying it.
 
@@ -194,7 +194,7 @@ def confirm_field_change(label_fr: str, ancien: str, nouveau: str) -> bool:
     """
     return bool(
         questionary.confirm(
-            f"Confirmer la modification de '{label_fr}' : '{ancien}' → '{nouveau}' ?"
+            f"Confirmer la modification de '{label_fr}' : '{old}' → '{new}' ?"
         ).ask()
     )
 
