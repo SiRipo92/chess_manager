@@ -30,7 +30,7 @@ def score_round(tournament: Tournament, rnd: Round) -> bool | None:
     while pending:
         matches_left = len(pending)
         console.print(
-            f"[bold]Tournoi en cours (Round {rnd.round_number} / {tournament.number_rounds}). "
+            f"[bold]Tournoi en cours (Tour {rnd.round_number} / {tournament.number_rounds}). "
             f"Il manque les résultats de {matches_left} / {len(rnd.matches)} match(es).[/bold]"
         )
 
@@ -79,7 +79,7 @@ def score_round(tournament: Tournament, rnd: Round) -> bool | None:
         action = questionary.select(
             "Confirmer ces résultats ?",
             choices=[
-                {"name": "1. Confirmer le round", "value": "confirm"},
+                {"name": "1. Confirmer le tour", "value": "confirm"},
                 {"name": "2. Modifier un résultat", "value": "edit"},
                 {"name": "3. Annuler (retour)", "value": "abort"},
             ],
