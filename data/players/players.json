@@ -109,7 +109,7 @@
     "birthdate": "1977-12-21",
     "national_id": "FR10101",
     "date_enrolled": "2025-09-12",
-    "tournaments_won": 0
+    "tournaments_won": 1
   },
   {
     "last_name": "Martin",
@@ -165,6 +165,14 @@
     "birthdate": "2010-09-20",
     "national_id": "PO81738",
     "date_enrolled": "2025-08-21",
+    "tournaments_won": 0
+  },
+  {
+    "last_name": "Ripoche",
+    "first_name": "Julien",
+    "birthdate": "1990-06-23",
+    "national_id": "PL46184",
+    "date_enrolled": "2025-09-19",
     "tournaments_won": 0
   },
   {

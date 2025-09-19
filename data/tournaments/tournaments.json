@@ -644,5 +644,322 @@
       ]
     ],
     "winner_id": "US10000"
+  },
+  {
+    "name": "tournament_3_nanterre_2025-09-19",
+    "location": "nanterre",
+    "start_date": "2025-09-19",
+    "end_date": "2025-09-19",
+    "started_at": "2025-09-19T09:06:35",
+    "finished_at": "2025-09-19T09:10:52",
+    "status": "Terminé",
+    "description": "",
+    "number_rounds": 4,
+    "current_round_number": 4,
+    "players": [
+      {
+        "last_name": "Bernard",
+        "first_name": "Sophie",
+        "birthdate": "1998-07-21",
+        "national_id": "AD00003",
+        "date_enrolled": "2025-03-01",
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Chevalier",
+        "first_name": "Alexandre",
+        "birthdate": "1993-10-05",
+        "national_id": "AK00010",
+        "date_enrolled": "2025-08-01",
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Dupont",
+        "first_name": "Marie",
+        "birthdate": "1990-05-12",
+        "national_id": "AB00001",
+        "date_enrolled": "2025-01-15",
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Glover",
+        "first_name": "Donjon",
+        "birthdate": "1975-11-04",
+        "national_id": "BA67291",
+        "date_enrolled": "2025-08-21",
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Leroy",
+        "first_name": "Julien",
+        "birthdate": "1988-09-30",
+        "national_id": "AG00006",
+        "date_enrolled": "2025-06-12",
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Macron",
+        "first_name": "Emmanuel",
+        "birthdate": "1977-12-21",
+        "national_id": "FR10101",
+        "date_enrolled": "2025-09-12",
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Merkel",
+        "first_name": "Angela",
+        "birthdate": "1954-07-17",
+        "national_id": "AL99999",
+        "date_enrolled": "2025-09-12",
+        "tournaments_won": 0
+      },
+      {
+        "last_name": "Moreau",
+        "first_name": "Claire",
+        "birthdate": "1992-12-01",
+        "national_id": "AF00005",
+        "date_enrolled": "2025-05-05",
+        "tournaments_won": 1
+      }
+    ],
+    "rounds": [
+      {
+        "round_number": 1,
+        "name": "Round 1",
+        "start_time": "2025-09-19T09:06:35.351018",
+        "end_time": "2025-09-19T09:08:05",
+        "matches": [
+          {
+            "player1": "BA67291",
+            "player2": "AL99999",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "AB00001",
+            "player2": "AD00003",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "AG00006",
+            "player2": "AF00005",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          },
+          {
+            "player1": "AK00010",
+            "player2": "FR10101",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          }
+        ]
+      },
+      {
+        "round_number": 2,
+        "name": "Round 2",
+        "start_time": "2025-09-19T09:08:34.971169",
+        "end_time": "2025-09-19T09:09:31",
+        "matches": [
+          {
+            "player1": "AB00001",
+            "player2": "FR10101",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "BA67291",
+            "player2": "AF00005",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          },
+          {
+            "player1": "AG00006",
+            "player2": "AK00010",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "AD00003",
+            "player2": "AL99999",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          }
+        ]
+      },
+      {
+        "round_number": 3,
+        "name": "Round 3",
+        "start_time": "2025-09-19T09:09:35.108910",
+        "end_time": "2025-09-19T09:09:53",
+        "matches": [
+          {
+            "player1": "FR10101",
+            "player2": "BA67291",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "AG00006",
+            "player2": "AB00001",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "AF00005",
+            "player2": "AL99999",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          },
+          {
+            "player1": "AD00003",
+            "player2": "AK00010",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          }
+        ]
+      },
+      {
+        "round_number": 4,
+        "name": "Round 4",
+        "start_time": "2025-09-19T09:09:56.601194",
+        "end_time": "2025-09-19T09:10:15",
+        "matches": [
+          {
+            "player1": "FR10101",
+            "player2": "AF00005",
+            "score1": 1.0,
+            "score2": 0.0,
+            "result1": "victoire",
+            "result2": "défaite"
+          },
+          {
+            "player1": "AB00001",
+            "player2": "BA67291",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "AD00003",
+            "player2": "AG00006",
+            "score1": 0.0,
+            "score2": 1.0,
+            "result1": "défaite",
+            "result2": "victoire"
+          },
+          {
+            "player1": "AL99999",
+            "player2": "AK00010",
+            "score1": 0.5,
+            "score2": 0.5,
+            "result1": "nul",
+            "result2": "nul"
+          }
+        ]
+      }
+    ],
+    "scores": {
+      "AD00003": 1.5,
+      "AK00010": 0.5,
+      "AB00001": 2.0,
+      "BA67291": 2.5,
+      "AG00006": 2.5,
+      "FR10101": 4.0,
+      "AL99999": 1.5,
+      "AF00005": 1.5
+    },
+    "past_pairs": [
+      [
+        "AF00005",
+        "BA67291"
+      ],
+      [
+        "AL99999",
+        "BA67291"
+      ],
+      [
+        "FR10101",
+        "AB00001"
+      ],
+      [
+        "AL99999",
+        "AK00010"
+      ],
+      [
+        "AF00005",
+        "FR10101"
+      ],
+      [
+        "BA67291",
+        "AB00001"
+      ],
+      [
+        "FR10101",
+        "AK00010"
+      ],
+      [
+        "AG00006",
+        "AB00001"
+      ],
+      [
+        "AL99999",
+        "AF00005"
+      ],
+      [
+        "AD00003",
+        "AB00001"
+      ],
+      [
+        "AG00006",
+        "AD00003"
+      ],
+      [
+        "AL99999",
+        "AD00003"
+      ],
+      [
+        "FR10101",
+        "BA67291"
+      ],
+      [
+        "AF00005",
+        "AG00006"
+      ],
+      [
+        "AD00003",
+        "AK00010"
+      ],
+      [
+        "AG00006",
+        "AK00010"
+      ]
+    ],
+    "winner_id": "FR10101"
   }
 ]
