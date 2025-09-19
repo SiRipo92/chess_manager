@@ -11,6 +11,7 @@ PLAYER_CREATION_KEYS = FIELD_CHOICES  # order used for constructing Player
 
 
 def _safe_ask(prompt_callable, default: Optional[str] = None) -> Optional[str]:
+    """Safely execute a questionary prompt, returning its answer or a default if interrupted or empty."""
     try:
         answer = prompt_callable.ask()
         return answer if answer is not None else default
@@ -24,6 +25,11 @@ def _safe_ask(prompt_callable, default: Optional[str] = None) -> Optional[str]:
 # --------------------
 
 def prompt_new_player_inputs_with_review() -> Optional[Tuple[str, str, str, str]]:
+    """
+    Collect player fields with validation,
+    show a recap to confirm/edit,
+    and return the values (or None if cancelled).
+    """
     field_values: Dict[str, str] = {}
 
     for label in PLAYER_CREATION_KEYS:
@@ -71,6 +77,11 @@ def prompt_new_player_inputs_with_review() -> Optional[Tuple[str, str, str, str]
 
 
 def prompt_field_with_validation(label: str, validate_func=None) -> Optional[str]:
+    """
+    Ask for user to enter a text value
+    If the prompt is cancelled, return None.
+    If a text value is submitted, return the validated and stripped string
+    """
     while True:
         value = _safe_ask(questionary.text(label))
         if value is None:
@@ -82,11 +93,6 @@ def prompt_field_with_validation(label: str, validate_func=None) -> Optional[str
             display_error_message("Format invalide. Veuillez réessayer.")
             continue
         return value.strip()
-
-
-def prompt_player_national_id(prompt: str = "Entrez l'identifiant national d'échecs du joueur : ") -> str:
-    value = _safe_ask(questionary.text(prompt))
-    return (value or "").strip().upper()
 
 
 # --------------------
@@ -214,10 +220,12 @@ def confirm_save_changes() -> bool:
 
 
 def confirm_player_added():
+    """Prints a confirmation messsage"""
     console.print("✅ [green]Le joueur a bien été ajouté à la base de données.[/green]\n")
 
 
 def display_error_message(reason: str):
+    """Prints an error message"""
     console.print(f"❌ [red]Erreur : {reason}[/red]")
 
 # --------------------
@@ -245,6 +253,7 @@ def notify_saved() -> None:
 
 
 def display_player_brief_info(player: Player) -> None:
+    """Displays the information collected about a single player (used for confirmation)"""
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Champ")
     table.add_column("Valeur", justify="center")

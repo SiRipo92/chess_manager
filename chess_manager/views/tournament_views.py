@@ -52,7 +52,7 @@ def display_round_pairings(round_obj: Round) -> None:
 def display_match_progress(round_no: int, total_rounds: int, remaining: int, total: int) -> None:
     """Short banner showing how many matches still need results."""
     console.print(
-        f"[bold]Tournoi en cours (Round {round_no} / {total_rounds}).[/bold] "
+        f"[bold]Tournoi en cours (Tour {round_no} / {total_rounds}).[/bold] "
         f"Résultats manquants : {remaining} / {total}."
     )
 
@@ -284,7 +284,7 @@ def display_tournament_recap(tournament) -> None:
     players_sorted = display_final_standings(tournament)
 
     # Per-round codes matrix
-    matrix = Table(title="Résultats par joueur et par round")
+    matrix = Table(title="Résultats par joueur et par tour")
     matrix.add_column("Joueur")
     matrix.add_column("ID")
     for r in tournament.rounds:

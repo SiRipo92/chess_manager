@@ -146,7 +146,7 @@ def display_final_summary(tournament) -> None:
 
     # --- Final standings table --------------------------------------------
     standings = Table(
-        title=f"Classement final (Round {tournament.current_round_number} / {tournament.number_rounds})"
+        title=f"Classement final (Tour {tournament.current_round_number} / {tournament.number_rounds})"
     )
     standings.add_column("Rang", justify="right")
     standings.add_column("Joueur")
@@ -184,7 +184,7 @@ def display_final_summary(tournament) -> None:
 def display_match_progress(round_no: int, total_rounds: int, remaining: int, total: int) -> None:
     """Display a round progress summary (number of missing match inputs per round)"""
     console.print(
-        f"[bold]Tournoi en cours (Round {round_no} / {total_rounds}).[/bold] "
+        f"[bold]Tournoi en cours (Tour {round_no} / {total_rounds}).[/bold] "
         f"Il manque les résultats de {remaining} / {total} match(es)."
     )
 
